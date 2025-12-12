@@ -47,16 +47,28 @@ const UploadForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:entry',message:'Form submit triggered',data:{hasFile:!!file,fileName:file?.name,fileSize:file?.size,fileType:file?.type,docName:docName.trim()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B'})}).catch(()=>{});
+        // #endregion
         if (!file || !docName.trim()) {
             setError('Please provide a file and a name.');
             return;
         }
         setError('');
         setIsUploading(true);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:beforeAddDoc',message:'About to call addDocument',data:{isUploading:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         try {
             await addDocument(file, { name: docName.trim() });
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:success',message:'addDocument completed successfully',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
             onClose();
         } catch (err: any) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:catch',message:'addDocument threw error',data:{errorMessage:err?.message,errorName:err?.name,errorString:String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+            // #endregion
             console.error('Upload failed:', err);
             let errorMessage = 'An unexpected error occurred during upload. Please try again.';
 

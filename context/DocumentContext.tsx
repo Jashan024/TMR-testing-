@@ -61,7 +61,13 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, [profile, fetchDocuments]);
   
   const addDocument = async (file: File, details: { name: string }) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:entry',message:'addDocument called',data:{hasSupabase:!!supabase,hasProfile:!!profile,profileId:profile?.id,fileName:file?.name,fileSize:file?.size},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     if (!supabase || !profile) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:fallback',message:'Using fallback (no supabase or profile)',data:{hasSupabase:!!supabase,hasProfile:!!profile},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         console.warn("Supabase not configured. Simulating document add.");
         const newDoc: DocumentFile = {
             id: new Date().getTime(),
@@ -77,10 +83,17 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
     
     const filePath = `${profile.id}/${Date.now()}_${file.name}`;
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:beforeUpload',message:'About to upload to storage',data:{filePath,bucket:'documents'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,D'})}).catch(()=>{});
+    // #endregion
 
     const { error: uploadError } = await supabase.storage
       .from('documents')
       .upload(filePath, file);
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:afterUpload',message:'Storage upload completed',data:{hasUploadError:!!uploadError,uploadErrorMsg:uploadError?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,D'})}).catch(()=>{});
+    // #endregion
 
     if (uploadError) throw uploadError;
 
@@ -92,11 +105,19 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         file_path: filePath,
     };
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:beforeInsert',message:'About to insert DB record',data:{newDocPayload},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+
     const { data, error: insertError } = await supabase
       .from('documents')
       .insert(newDocPayload)
       .select()
       .single();
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:afterInsert',message:'DB insert completed',data:{hasInsertError:!!insertError,insertErrorMsg:insertError?.message,insertedId:data?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
 
     if (insertError) throw insertError;
 
