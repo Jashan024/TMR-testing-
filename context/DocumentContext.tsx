@@ -25,6 +25,9 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   const { profile } = useProfile();
 
   const fetchDocuments = useCallback(async (userId?: string) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:fetchDocuments:entry',message:'fetchDocuments called',data:{hasSupabase:!!supabase,userId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     if (!supabase || !userId) {
         setDocuments(!supabase ? fallbackDocuments : []);
         setLoading(false);
@@ -32,27 +35,55 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
     setLoading(true);
     try {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:fetchDocuments:beforeQuery',message:'About to query documents table',data:{userId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         const { data: docRecords, error } = await supabase
             .from('documents')
             .select('*')
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
 
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:fetchDocuments:afterQuery',message:'Documents query completed',data:{hasError:!!error,errorMsg:error?.message,docCount:docRecords?.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+
         if (error) throw error;
         
-        // Enhance documents with their public URLs
+        // Enhance documents with their public URLs - add timeout protection
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:fetchDocuments:beforeEnhance',message:'About to enhance documents with URLs',data:{docCount:docRecords?.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         const enhancedDocs = await Promise.all(
           (docRecords || []).map(async (doc) => {
-            const { data: urlData } = supabase!.storage.from('documents').getPublicUrl(doc.file_path);
-            return { ...doc, public_url: urlData.publicUrl };
+            try {
+              const { data: urlData } = supabase!.storage.from('documents').getPublicUrl(doc.file_path);
+              return { ...doc, public_url: urlData.publicUrl };
+            } catch (urlError) {
+              // If URL generation fails, use a fallback
+              console.warn('Failed to generate public URL for document:', doc.id, urlError);
+              return { ...doc, public_url: '#' };
+            }
           })
         );
 
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:fetchDocuments:afterEnhance',message:'Documents enhancement completed',data:{enhancedCount:enhancedDocs.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+
         setDocuments(enhancedDocs);
     } catch(error) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:fetchDocuments:catch',message:'Error in fetchDocuments',data:{error:String(error)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         console.error('Error fetching documents:', error);
+        // Set empty array on error to prevent UI from being stuck
+        setDocuments([]);
     } finally {
         setLoading(false);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:fetchDocuments:finally',message:'fetchDocuments finally block',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
     }
   }, []);
 
@@ -121,25 +152,28 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     if (insertError) throw insertError;
 
-    // Refresh the list to get the new document with its public URL
-    // Use Promise.race with timeout to prevent hanging on mobile
+    // Optimistically add the new document to the list immediately (mobile fix)
+    // This prevents UI from being stuck if fetchDocuments hangs
+    const optimisticDoc: DocumentFile = {
+        ...data,
+        public_url: supabase.storage.from('documents').getPublicUrl(filePath).data.publicUrl,
+    };
+    setDocuments(prev => [optimisticDoc, ...prev]);
+    
+    // Refresh the list in the background (non-blocking) to get accurate data
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:beforeFetch',message:'About to call fetchDocuments',data:{profileId:profile.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:beforeFetch',message:'About to call fetchDocuments (non-blocking)',data:{profileId:profile.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
     // #endregion
-    try {
-        await Promise.race([
-            fetchDocuments(profile.id),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch timeout')), 10000))
-        ]);
-    } catch (fetchErr) {
-        // Log but don't throw - document is already uploaded, just refresh failed
+    // Don't await - let it run in background to prevent blocking
+    fetchDocuments(profile.id).catch((fetchErr) => {
+        // Log but don't throw - document is already uploaded and added optimistically
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:fetchError',message:'fetchDocuments failed or timed out',data:{error:String(fetchErr)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:fetchError',message:'fetchDocuments failed in background',data:{error:String(fetchErr)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
         // #endregion
         console.warn('Failed to refresh document list after upload:', fetchErr);
-    }
+    });
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:afterFetch',message:'fetchDocuments completed',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:afterFetch',message:'addDocument returning (fetchDocuments running in background)',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
     // #endregion
   }
 
