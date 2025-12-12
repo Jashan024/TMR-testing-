@@ -59,13 +59,38 @@ const UploadForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         // #region agent log
         fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:beforeAddDoc',message:'About to call addDocument',data:{isUploading:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
         // #endregion
+        
+        // Add timeout for mobile devices (60 seconds)
+        const uploadTimeout = setTimeout(() => {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:timeout',message:'Upload timeout reached',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
+            setIsUploading(false);
+            setError('Upload is taking longer than expected. Please check your connection and try again.');
+        }, 60000);
+        
         try {
             await addDocument(file, { name: docName.trim() });
+            clearTimeout(uploadTimeout);
             // #region agent log
             fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:success',message:'addDocument completed successfully',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
             // #endregion
-            onClose();
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:beforeClose',message:'About to call onClose',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
+            // Force state update before closing modal (mobile fix)
+            setIsUploading(false);
+            // Use requestAnimationFrame + setTimeout to ensure state updates are processed on mobile
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    onClose();
+                }, 50);
+            });
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:afterClose',message:'onClose called',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
         } catch (err: any) {
+            clearTimeout(uploadTimeout);
             // #region agent log
             fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:catch',message:'addDocument threw error',data:{errorMessage:err?.message,errorName:err?.name,errorString:String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
             // #endregion
@@ -88,7 +113,22 @@ const UploadForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
             setError(errorMessage);
         } finally {
-            setIsUploading(false);
+            clearTimeout(uploadTimeout);
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:finally',message:'In finally block, setting isUploading=false',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
+            // Ensure state is always reset (mobile fix - use callback to force update)
+            setIsUploading(prev => {
+                if (prev) {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:finallyCallback',message:'isUploading was true, setting to false',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+                    // #endregion
+                }
+                return false;
+            });
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:handleSubmit:afterFinally',message:'isUploading set to false',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
         }
     };
 
@@ -338,8 +378,18 @@ const DocumentsPage: React.FC = () => {
             </div>
 
             {/* Modals with proper z-index management */}
-            <Modal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} title="Upload New Document">
-                <UploadForm onClose={() => setIsUploadModalOpen(false)} />
+            <Modal isOpen={isUploadModalOpen} onClose={() => {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:Modal:onClose',message:'Modal onClose callback called',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
+                setIsUploadModalOpen(false);
+            }} title="Upload New Document">
+                <UploadForm onClose={() => {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentsPage.tsx:UploadForm:onClose',message:'UploadForm onClose callback called',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+                    // #endregion
+                    setIsUploadModalOpen(false);
+                }} />
             </Modal>
 
             <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirm Deletion">

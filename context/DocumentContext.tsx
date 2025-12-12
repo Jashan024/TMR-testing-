@@ -122,7 +122,25 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (insertError) throw insertError;
 
     // Refresh the list to get the new document with its public URL
-    await fetchDocuments(profile.id);
+    // Use Promise.race with timeout to prevent hanging on mobile
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:beforeFetch',message:'About to call fetchDocuments',data:{profileId:profile.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    try {
+        await Promise.race([
+            fetchDocuments(profile.id),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch timeout')), 10000))
+        ]);
+    } catch (fetchErr) {
+        // Log but don't throw - document is already uploaded, just refresh failed
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:fetchError',message:'fetchDocuments failed or timed out',data:{error:String(fetchErr)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        console.warn('Failed to refresh document list after upload:', fetchErr);
+    }
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/66615c1c-0aba-4a25-90c3-c3bf24783512',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DocumentContext.tsx:addDocument:afterFetch',message:'fetchDocuments completed',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
   }
 
   const updateDocument = async (docId: number, updates: Partial<DocumentFile>) => {
