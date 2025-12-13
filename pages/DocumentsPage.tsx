@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -14,7 +14,7 @@ import type { DocumentFile } from '../types';
 const DocumentsPage: React.FC = () => {
   const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
-  const { documents, addDocument, updateDocument, deleteDocument, loading: documentsLoading } = useDocuments();
+  const { documents, addDocument, updateDocument, deleteDocument, loading: documentsLoading, error: documentsError, refetch } = useDocuments();
 
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -22,6 +22,7 @@ const DocumentsPage: React.FC = () => {
   const [uploadVisibility, setUploadVisibility] = useState<DocumentFile['visibility']>('private');
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadBusy, setUploadBusy] = useState(false);
+  const uploadTokenRef = useRef(0);
 
   const [search, setSearch] = useState('');
   const [editingDocId, setEditingDocId] = useState<number | null>(null);
@@ -76,8 +77,11 @@ const DocumentsPage: React.FC = () => {
   };
 
   const closeUpload = () => {
+    // Invalidate any in-flight upload UI so mobile users aren't stuck if a request hangs.
+    uploadTokenRef.current += 1;
     setIsUploadOpen(false);
     resetUpload();
+    setUploadBusy(false);
   };
 
   const onPickFile = (file: File | null) => {
@@ -190,14 +194,22 @@ const DocumentsPage: React.FC = () => {
       return;
     }
 
+    const myToken = uploadTokenRef.current + 1;
+    uploadTokenRef.current = myToken;
     setUploadBusy(true);
     try {
       await addDocument(uploadFile, { name, visibility: uploadVisibility });
-      closeUpload();
+      if (uploadTokenRef.current === myToken) {
+        closeUpload();
+      }
     } catch (err: any) {
-      setUploadError(err?.message || 'Upload failed.');
+      if (uploadTokenRef.current === myToken) {
+        setUploadError(err?.message || 'Upload failed.');
+      }
     } finally {
-      setUploadBusy(false);
+      if (uploadTokenRef.current === myToken) {
+        setUploadBusy(false);
+      }
     }
   };
 
@@ -235,6 +247,19 @@ const DocumentsPage: React.FC = () => {
           </div>
         </div>
       </Card>
+
+      {documentsError && !documentsLoading && (
+        <Card className="mb-6 border border-red-900/40">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="text-sm text-red-300">
+              {documentsError}
+            </div>
+            <Button onClick={() => refetch()} variant="secondary" className="w-full sm:w-auto">
+              Retry
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {documentsLoading ? (
         <div className="flex justify-center items-center py-16">
@@ -381,7 +406,7 @@ const DocumentsPage: React.FC = () => {
               <input
                 type="file"
                 onChange={(e) => onPickFile(e.target.files?.[0] || null)}
-                disabled={uploadBusy}
+                disabled={false}
                 className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600"
               />
               {uploadFile && (
@@ -419,7 +444,7 @@ const DocumentsPage: React.FC = () => {
           {uploadError && <p className="text-sm text-red-400">{uploadError}</p>}
 
           <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={closeUpload} disabled={uploadBusy}>
+            <Button type="button" variant="secondary" onClick={closeUpload} disabled={false}>
               Cancel
             </Button>
             <Button type="submit" variant="primary" loading={uploadBusy} disabled={!uploadFile}>

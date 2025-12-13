@@ -9,6 +9,8 @@ interface DocumentContextType {
   updateDocument: (docId: number, updates: Partial<DocumentFile>) => Promise<void>;
   deleteDocument: (docId: number) => Promise<void>;
   loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
 }
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -19,24 +21,44 @@ const fallbackDocuments: DocumentFile[] = [
     { id: 3, user_id: 'fallback-user', name: 'Design_Portfolio_2023.pdf', size: '5.8 MB', created_at: '2023-09-15', visibility: 'public', file_path: '', public_url: '#' },
 ];
 
+const withTimeout = async <T,>(promise: Promise<T>, ms: number, message: string): Promise<T> => {
+  let timeoutId: number | undefined;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(message)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) window.clearTimeout(timeoutId);
+  }
+};
+
 export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { profile } = useProfile();
 
   const fetchDocuments = useCallback(async (userId?: string) => {
     if (!supabase || !userId) {
         setDocuments(!supabase ? fallbackDocuments : []);
+        setError(null);
         setLoading(false);
         return;
     };
     setLoading(true);
+    setError(null);
     try {
-        const { data: docRecords, error } = await supabase
+        const query = supabase
             .from('documents')
             .select('*')
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
+        const { data: docRecords, error } = await withTimeout(
+          query,
+          15000,
+          'Fetching documents timed out. Please check your connection and try again.'
+        );
 
         if (error) throw error;
 
@@ -51,8 +73,9 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         });
 
         setDocuments(enhancedDocs as DocumentFile[]);
-    } catch(error) {
-        console.error('Error fetching documents:', error);
+    } catch (err: any) {
+        console.error('Error fetching documents:', err);
+        setError(err?.message || 'Failed to fetch documents.');
     } finally {
         setLoading(false);
     }
@@ -61,6 +84,16 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   useEffect(() => {
     fetchDocuments(profile?.id);
   }, [profile, fetchDocuments]);
+
+  // Safety timeout: Clear loading if stuck after 5 seconds
+  useEffect(() => {
+    if (loading) {
+      const timeout = window.setTimeout(() => {
+        setLoading(false);
+      }, 5000);
+      return () => window.clearTimeout(timeout);
+    }
+  }, [loading]);
   
   const addDocument = async (file: File, details: { name: string; visibility?: DocumentFile['visibility'] }) => {
     if (!supabase || !profile) {
@@ -78,11 +111,17 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         return;
     }
     
+    setError(null);
     const filePath = `${profile.id}/${Date.now()}_${file.name}`;
 
-    const { error: uploadError } = await supabase.storage
+    const uploadCall = supabase.storage
       .from('documents')
       .upload(filePath, file, { contentType: file.type || undefined });
+    const { error: uploadError } = await withTimeout(
+      uploadCall,
+      90000,
+      'Upload timed out. Mobile networks can be slow—please retry on a stronger connection.'
+    );
 
     if (uploadError) throw uploadError;
 
@@ -94,11 +133,16 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         file_path: filePath,
     };
 
-    const { data, error: insertError } = await supabase
+    const insertCall = supabase
       .from('documents')
       .insert(newDocPayload)
       .select()
       .single();
+    const { data, error: insertError } = await withTimeout(
+      insertCall,
+      15000,
+      'Saving document record timed out. Please retry.'
+    );
 
     if (insertError) throw insertError;
 
@@ -112,12 +156,18 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         setDocuments(docs => docs.map(d => d.id === docId ? { ...d, ...updates } : d));
         return;
       }
-      const { data, error } = await supabase
-        .from('documents')
-        .update(updates)
-        .eq('id', docId)
-        .select()
-        .single();
+      setError(null);
+      const updateCall = supabase
+          .from('documents')
+          .update(updates)
+          .eq('id', docId)
+          .select()
+          .single();
+      const { data, error } = await withTimeout(
+        updateCall,
+        15000,
+        'Updating document timed out. Please retry.'
+      );
       
       if (error) throw error;
 
@@ -130,13 +180,19 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         setDocuments(docs => docs.filter(d => d.id !== docId));
         return;
     }
+    setError(null);
     const docToDelete = documents.find(d => d.id === docId);
     if (!docToDelete) return;
 
     // Delete file from storage
-    const { error: storageError } = await supabase.storage
-        .from('documents')
-        .remove([docToDelete.file_path]);
+    const storageRemoveCall = supabase.storage
+      .from('documents')
+      .remove([docToDelete.file_path]);
+    const { error: storageError } = await withTimeout(
+      storageRemoveCall,
+      20000,
+      'Deleting file timed out. Please retry.'
+    );
 
     if (storageError) {
       // Log the error but proceed to delete from DB, as the file might already be gone.
@@ -144,10 +200,15 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
 
     // Delete record from database
-    const { error: dbError } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', docId);
+    const deleteCall = supabase
+      .from('documents')
+      .delete()
+      .eq('id', docId);
+    const { error: dbError } = await withTimeout(
+      deleteCall,
+      15000,
+      'Deleting document record timed out. Please retry.'
+    );
 
     if (dbError) throw dbError;
 
@@ -155,7 +216,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   }
 
   return (
-    <DocumentContext.Provider value={{ documents, addDocument, updateDocument, deleteDocument, loading }}>
+    <DocumentContext.Provider value={{ documents, addDocument, updateDocument, deleteDocument, loading, error, refetch: () => fetchDocuments(profile?.id) }}>
       {children}
     </DocumentContext.Provider>
   );
