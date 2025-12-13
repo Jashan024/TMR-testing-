@@ -104,6 +104,12 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
                 }
                 SESSION_PRIME_DONE.current = true;
             } else if (!initialSession) {
+                // No session - do NOT trust cachedProfile (it can be stale if tokens were cleared).
+                // Clear cached profile to avoid "looks logged in but backend calls fail" (common on mobile).
+                if (cachedProfile) {
+                    try { sessionStorage.removeItem(PROFILE_STORAGE_KEY); } catch (_) {}
+                    setProfile(null);
+                }
                 // No session - clear loading
                 setLoading(false);
             }

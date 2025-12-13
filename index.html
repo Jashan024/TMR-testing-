@@ -53,51 +53,6 @@
 </head>
   <body class="bg-gray-900 text-gray-200">
     <div id="root"></div>
-    <script>
-      // Clear Supabase sessions on fresh tab load (runs BEFORE React)
-      // Check if app flag exists in sessionStorage
-      (function() {
-        try {
-          const appFlag = sessionStorage.getItem('tmr_app_running');
-          if (!appFlag) {
-            // Fresh tab detected (tab was closed) - clear all Supabase localStorage BEFORE React loads
-            console.log('[PRE-REACT] Fresh tab detected - clearing Supabase localStorage');
-            const supabaseKeys = [];
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key && (
-                key.startsWith('sb-') || 
-                key.includes('supabase') || 
-                key.includes('auth') ||
-                key.startsWith('supabase.auth.token')
-              )) {
-                supabaseKeys.push(key);
-              }
-            }
-            supabaseKeys.forEach(key => {
-              try {
-                localStorage.removeItem(key);
-              } catch (e) {}
-            });
-            console.log('[PRE-REACT] Cleared Supabase keys:', supabaseKeys);
-            
-            // Set flag immediately
-            try {
-              sessionStorage.setItem('tmr_app_running', 'true');
-            } catch (e) {}
-          } else {
-            // App was already running (page refresh) - DON'T clear, keep sessions
-            // Just ensure flag is still set
-            console.log('[PRE-REACT] Page refresh detected - keeping sessions');
-            try {
-              sessionStorage.setItem('tmr_app_running', 'true');
-            } catch (e) {}
-          }
-        } catch (err) {
-          console.error('[PRE-REACT] Error in cleanup script:', err);
-        }
-      })();
-    </script>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
