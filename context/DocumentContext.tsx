@@ -39,7 +39,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [error, setError] = useState<string | null>(null);
   const { profile, session } = useProfile();
 
-  const fetchDocuments = useCallback(async (userId?: string) => {
+  const fetchDocuments = useCallback(async (userId?: string, accessToken?: string) => {
     if (!supabase || !userId) {
         setDocuments(!supabase ? fallbackDocuments : []);
         setError(null);
@@ -48,6 +48,46 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
     setLoading(true);
     setError(null);
+    
+    // Prefer server endpoint to avoid mobile → Supabase connectivity issues
+    if (accessToken) {
+      try {
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 20000);
+        const resp = await fetch('/api/list-documents', {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          signal: controller.signal,
+        });
+        window.clearTimeout(timeout);
+
+        if (resp.status !== 404) {
+          const json = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            throw new Error(json?.error || `Failed to fetch documents (${resp.status})`);
+          }
+          setDocuments((json.documents || []) as DocumentFile[]);
+          setLoading(false);
+          return;
+        }
+        // 404 means endpoint not deployed (local dev) - fall through to direct fetch
+      } catch (e: any) {
+        if (e?.name === 'AbortError') {
+          setError('Fetching documents timed out. Please check your connection.');
+          setLoading(false);
+          return;
+        }
+        // For other errors from the endpoint, surface them
+        if (!String(e?.message || '').includes('404')) {
+          console.error('Server fetch error:', e);
+          setError(e?.message || 'Failed to fetch documents.');
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
+    // Fallback: direct Supabase fetch (works on desktop, may fail on mobile)
     try {
         const query = supabase
             .from('documents')
@@ -82,8 +122,8 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, []);
 
   useEffect(() => {
-    fetchDocuments(profile?.id);
-  }, [profile, fetchDocuments]);
+    fetchDocuments(profile?.id, session?.access_token);
+  }, [profile, session, fetchDocuments]);
 
   // Safety timeout: Clear loading if stuck after 5 seconds
   useEffect(() => {
@@ -143,7 +183,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         if (!resp.ok) {
           throw new Error(json?.error || `Upload failed (${resp.status})`);
         }
-        await fetchDocuments(profile.id);
+        await fetchDocuments(profile.id, session.access_token);
         return;
       }
     } catch (e: any) {
@@ -193,7 +233,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (insertError) throw insertError;
 
     // Refresh the list to get the new document with its public URL
-    await fetchDocuments(profile.id);
+    await fetchDocuments(profile.id, session?.access_token);
   }
 
   const updateDocument = async (docId: number, updates: Partial<DocumentFile>) => {
@@ -262,7 +302,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   }
 
   return (
-    <DocumentContext.Provider value={{ documents, addDocument, updateDocument, deleteDocument, loading, error, refetch: () => fetchDocuments(profile?.id) }}>
+    <DocumentContext.Provider value={{ documents, addDocument, updateDocument, deleteDocument, loading, error, refetch: () => fetchDocuments(profile?.id, session?.access_token) }}>
       {children}
     </DocumentContext.Provider>
   );
