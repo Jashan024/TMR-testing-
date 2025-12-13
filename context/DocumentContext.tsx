@@ -119,6 +119,45 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (session.user.id !== profile.id) {
       throw new Error('Session mismatch. Please sign out and sign in again.');
     }
+    
+    // Prefer Vercel serverless upload to avoid mobile browser -> Supabase Storage upload issues.
+    // Falls back to direct upload for local dev or if the endpoint isn't available.
+    try {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 60000);
+      const form = new FormData();
+      form.append('file', file);
+      form.append('name', details.name);
+      form.append('visibility', details.visibility || 'private');
+
+      const resp = await fetch('/api/upload-document', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+        signal: controller.signal,
+      });
+      window.clearTimeout(timeout);
+
+      if (resp.status !== 404) {
+        const json = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+          throw new Error(json?.error || `Upload failed (${resp.status})`);
+        }
+        await fetchDocuments(profile.id);
+        return;
+      }
+    } catch (e: any) {
+      // If the endpoint exists but fails, surface that error. If it was an abort, show clear message.
+      if (e?.name === 'AbortError') {
+        throw new Error('Upload timed out. Please retry.');
+      }
+      // If we got a normal error, fall back only when the endpoint is missing (handled above),
+      // otherwise throw to avoid double-uploading.
+      if (String(e?.message || '').includes('Upload failed') || String(e?.message || '').includes('Missing')) {
+        throw e;
+      }
+    }
+
     const filePath = `${profile.id}/${Date.now()}_${file.name}`;
 
     const uploadCall = supabase.storage
