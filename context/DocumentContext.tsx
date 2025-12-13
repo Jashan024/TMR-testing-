@@ -243,6 +243,42 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         return;
       }
       setError(null);
+
+      // Prefer server endpoint for mobile compatibility
+      if (session?.access_token) {
+        try {
+          const controller = new AbortController();
+          const timeout = window.setTimeout(() => controller.abort(), 15000);
+          const resp = await fetch('/api/update-document', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ docId, ...updates }),
+            signal: controller.signal,
+          });
+          window.clearTimeout(timeout);
+
+          if (resp.status !== 404) {
+            const json = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+              throw new Error(json?.error || `Update failed (${resp.status})`);
+            }
+            setDocuments(docs => docs.map(d => d.id === docId ? { ...d, ...json.document } : d));
+            return;
+          }
+        } catch (e: any) {
+          if (e?.name === 'AbortError') {
+            throw new Error('Update timed out. Please retry.');
+          }
+          if (!String(e?.message || '').includes('404')) {
+            throw e;
+          }
+        }
+      }
+
+      // Fallback: direct Supabase
       const updateCall = supabase
           .from('documents')
           .update(updates)
@@ -270,7 +306,41 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     const docToDelete = documents.find(d => d.id === docId);
     if (!docToDelete) return;
 
-    // Delete file from storage
+    // Prefer server endpoint for mobile compatibility
+    if (session?.access_token) {
+      try {
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 20000);
+        const resp = await fetch('/api/delete-document', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ docId }),
+          signal: controller.signal,
+        });
+        window.clearTimeout(timeout);
+
+        if (resp.status !== 404) {
+          const json = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            throw new Error(json?.error || `Delete failed (${resp.status})`);
+          }
+          setDocuments(docs => docs.filter(d => d.id !== docId));
+          return;
+        }
+      } catch (e: any) {
+        if (e?.name === 'AbortError') {
+          throw new Error('Delete timed out. Please retry.');
+        }
+        if (!String(e?.message || '').includes('404')) {
+          throw e;
+        }
+      }
+    }
+
+    // Fallback: direct Supabase
     const storageRemoveCall = supabase.storage
       .from('documents')
       .remove([docToDelete.file_path]);
@@ -281,11 +351,9 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     );
 
     if (storageError) {
-      // Log the error but proceed to delete from DB, as the file might already be gone.
       console.error("Error deleting from storage:", storageError.message);
     }
 
-    // Delete record from database
     const deleteCall = supabase
       .from('documents')
       .delete()
