@@ -11,6 +11,9 @@ import { useProfile } from '../context/ProfileContext';
 import { supabase } from '../lib/supabaseClient';
 import type { DocumentFile } from '../types';
 
+// Provided by Vite `define` in `vite.config.ts`
+declare const __BUILD_ID__: string;
+
 const DocumentsPage: React.FC = () => {
   const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
@@ -223,6 +226,9 @@ const DocumentsPage: React.FC = () => {
           </p>
           <p className="text-sm text-gray-400 mt-1">
             Public documents can be seen on your public profile.
+          </p>
+          <p className="text-xs text-gray-600 mt-2">
+            Build: {__BUILD_ID__}
           </p>
         </div>
         <div className="flex gap-3">
