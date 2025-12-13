@@ -37,7 +37,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { profile } = useProfile();
+  const { profile, session } = useProfile();
 
   const fetchDocuments = useCallback(async (userId?: string) => {
     if (!supabase || !userId) {
@@ -112,11 +112,18 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
     
     setError(null);
+    // Fail fast if auth is missing/mismatched (common on mobile when storage is cleared or session expires).
+    if (!session?.user?.id) {
+      throw new Error('Session expired. Please sign in again and retry.');
+    }
+    if (session.user.id !== profile.id) {
+      throw new Error('Session mismatch. Please sign out and sign in again.');
+    }
     const filePath = `${profile.id}/${Date.now()}_${file.name}`;
 
     const uploadCall = supabase.storage
       .from('documents')
-      .upload(filePath, file, { contentType: file.type || undefined });
+      .upload(filePath, file);
     const { error: uploadError } = await withTimeout(
       uploadCall,
       90000,
