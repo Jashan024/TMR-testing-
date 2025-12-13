@@ -1,4 +1,5 @@
 import React, { ReactNode, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { CloseIcon } from './Icons';
 
 interface ModalProps {
@@ -48,23 +49,27 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   }, [isOpen]);
 
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
-    <div 
-      className="fixed inset-0 bg-black/70 z-50 overflow-y-auto backdrop-blur-sm" 
+  const modalUi = (
+    <div
+      className="fixed inset-0 bg-black/70 z-50 overflow-y-auto backdrop-blur-sm"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
     >
       {/* Flex container for centering - uses min-height to allow scrolling on small screens */}
       <div className="min-h-full flex items-start sm:items-center justify-center p-4 py-8 sm:py-4">
-        <div 
+        <div
           className="bg-gray-800/95 rounded-2xl shadow-xl w-full max-w-lg relative border border-gray-700 animate-fade-in-up my-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Sticky header so close button is always accessible */}
           <div className="sticky top-0 flex justify-between items-center p-4 border-b border-gray-700 bg-gray-800/95 rounded-t-2xl z-10">
             <h3 className="text-lg font-semibold text-white">{title}</h3>
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="text-gray-400 hover:text-white transition p-1 -mr-1 rounded-lg hover:bg-gray-700/50"
               aria-label="Close modal"
             >
@@ -78,6 +83,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
       </div>
     </div>
   );
+
+  // Render into a portal so parent transforms/animations can't break `position: fixed`.
+  return createPortal(modalUi, document.body);
 };
 
 export default Modal;
