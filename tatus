@@ -1,0 +1,27 @@
+warning: in the working copy of 'pages/AuthPage.tsx', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/pages/AuthPage.tsx b/pages/AuthPage.tsx[m
+[1mindex 9a85de7..f9c0a7c 100644[m
+[1m--- a/pages/AuthPage.tsx[m
+[1m+++ b/pages/AuthPage.tsx[m
+[36m@@ -205,9 +205,9 @@[m [mconst AuthPage: React.FC = () => {[m
+                         {view !== 'forgot_password' && ([m
+                             <div className={`flex ${role === 'recruiter' ? 'justify-center' : ''}`}>[m
+                                 {role !== 'recruiter' && ([m
+[31m-                                    <button onClick={() => { setView('signup'); setError(''); setMessage(''); }} className={tabButtonClasses('signup')}>[m
+[31m-                                        Sign Up[m
+[31m-                                    </button>[m
+[32m+[m[32m                                <button onClick={() => { setView('signup'); setError(''); setMessage(''); }} className={tabButtonClasses('signup')}>[m
+[32m+[m[32m                                    Sign Up[m
+[32m+[m[32m                                </button>[m
+                                 )}[m
+                                 <button onClick={() => { setView('signin'); setError(''); setMessage(''); }} className={role === 'recruiter' ? tabButtonClasses('signin').replace('w-1/2', 'w-48') : tabButtonClasses('signin')}>[m
+                                     Sign In[m
+[36m@@ -222,7 +222,7 @@[m [mconst AuthPage: React.FC = () => {[m
+ [m
+                             {error && <p className="mb-4 text-center text-red-400">{error}</p>}[m
+                             {message && <p className="mb-4 text-center text-green-400">{message}</p>}[m
+[31m-[m
+[32m+[m[41m                            [m
+                             {view === 'signup' && role !== 'recruiter' && ([m
+                                 <form onSubmit={handleSubmit} className="space-y-6">[m
+                                     <h2 className="text-2xl font-bold text-center text-white">[m
