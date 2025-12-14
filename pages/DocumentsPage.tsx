@@ -16,7 +16,7 @@ declare const __BUILD_ID__: string;
 
 const DocumentsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile, session, loading: profileLoading } = useProfile();
   const { documents, addDocument, updateDocument, deleteDocument, loading: documentsLoading, error: documentsError, refetch } = useDocuments();
 
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -41,7 +41,7 @@ const DocumentsPage: React.FC = () => {
     if (!profile) {
       try {
         sessionStorage.setItem('redirectUrl', `${window.location.origin}/#/documents`);
-      } catch (_) {}
+      } catch (_) { }
       navigate('/auth');
       return;
     }
@@ -96,8 +96,40 @@ const DocumentsPage: React.FC = () => {
   };
 
   const resolveDocUrl = async (doc: DocumentFile): Promise<string | null> => {
-    if (!supabase) return doc.public_url || null;
+    // For public documents with a cached public_url, use it directly
     if (doc.visibility === 'public' && doc.public_url) return doc.public_url;
+
+    // Prefer API endpoint for mobile compatibility
+    if (session?.access_token) {
+      try {
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 15000);
+        const resp = await fetch('/api/get-document-url', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ docId: doc.id }),
+          signal: controller.signal,
+        });
+        window.clearTimeout(timeout);
+
+        if (resp.status !== 404) {
+          const json = await resp.json().catch(() => ({}));
+          if (resp.ok && json.url) {
+            return json.url;
+          }
+        }
+      } catch (e: any) {
+        if (e?.name !== 'AbortError') {
+          console.error('Failed to get document URL via API:', e);
+        }
+      }
+    }
+
+    // Fallback: direct Supabase (for local dev)
+    if (!supabase) return doc.public_url || null;
 
     try {
       const { data, error } = await supabase.storage

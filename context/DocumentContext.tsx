@@ -16,9 +16,9 @@ interface DocumentContextType {
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
 
 const fallbackDocuments: DocumentFile[] = [
-    { id: 1, user_id: 'fallback-user', name: 'Resume_Frontend_Engineer.pdf', size: '248 KB', created_at: '2023-10-26', visibility: 'public', file_path: '', public_url: '#' },
-    { id: 2, user_id: 'fallback-user', name: 'Cover_Letter_Startup.pdf', size: '112 KB', created_at: '2023-10-22', visibility: 'private', file_path: '', public_url: '#' },
-    { id: 3, user_id: 'fallback-user', name: 'Design_Portfolio_2023.pdf', size: '5.8 MB', created_at: '2023-09-15', visibility: 'public', file_path: '', public_url: '#' },
+  { id: 1, user_id: 'fallback-user', name: 'Resume_Frontend_Engineer.pdf', size: '248 KB', created_at: '2023-10-26', visibility: 'public', file_path: '', public_url: '#' },
+  { id: 2, user_id: 'fallback-user', name: 'Cover_Letter_Startup.pdf', size: '112 KB', created_at: '2023-10-22', visibility: 'private', file_path: '', public_url: '#' },
+  { id: 3, user_id: 'fallback-user', name: 'Design_Portfolio_2023.pdf', size: '5.8 MB', created_at: '2023-09-15', visibility: 'public', file_path: '', public_url: '#' },
 ];
 
 const withTimeout = async <T,>(promise: Promise<T>, ms: number, message: string): Promise<T> => {
@@ -41,14 +41,14 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const fetchDocuments = useCallback(async (userId?: string, accessToken?: string) => {
     if (!supabase || !userId) {
-        setDocuments(!supabase ? fallbackDocuments : []);
-        setError(null);
-        setLoading(false);
-        return;
+      setDocuments(!supabase ? fallbackDocuments : []);
+      setError(null);
+      setLoading(false);
+      return;
     };
     setLoading(true);
     setError(null);
-    
+
     // Prefer server endpoint to avoid mobile → Supabase connectivity issues
     if (accessToken) {
       try {
@@ -89,35 +89,35 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     // Fallback: direct Supabase fetch (works on desktop, may fail on mobile)
     try {
-        const query = supabase
-            .from('documents')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
-        const { data: docRecords, error } = await withTimeout(
-          query,
-          15000,
-          'Fetching documents timed out. Please check your connection and try again.'
-        );
+      const query = supabase
+        .from('documents')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      const { data: docRecords, error } = await withTimeout(
+        query,
+        15000,
+        'Fetching documents timed out. Please check your connection and try again.'
+      );
 
-        if (error) throw error;
+      if (error) throw error;
 
-        // Only compute a public URL for public documents.
-        // Private documents should use signed URLs created on-demand.
-        const enhancedDocs = (docRecords || []).map((doc) => {
-          if (doc.visibility === 'public') {
-            const { data: urlData } = supabase!.storage.from('documents').getPublicUrl(doc.file_path);
-            return { ...doc, public_url: urlData.publicUrl };
-          }
-          return { ...doc, public_url: undefined };
-        });
+      // Only compute a public URL for public documents.
+      // Private documents should use signed URLs created on-demand.
+      const enhancedDocs = (docRecords || []).map((doc) => {
+        if (doc.visibility === 'public') {
+          const { data: urlData } = supabase!.storage.from('documents').getPublicUrl(doc.file_path);
+          return { ...doc, public_url: urlData.publicUrl };
+        }
+        return { ...doc, public_url: undefined };
+      });
 
-        setDocuments(enhancedDocs as DocumentFile[]);
+      setDocuments(enhancedDocs as DocumentFile[]);
     } catch (err: any) {
-        console.error('Error fetching documents:', err);
-        setError(err?.message || 'Failed to fetch documents.');
+      console.error('Error fetching documents:', err);
+      setError(err?.message || 'Failed to fetch documents.');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   }, []);
 
@@ -134,23 +134,23 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
       return () => window.clearTimeout(timeout);
     }
   }, [loading]);
-  
+
   const addDocument = async (file: File, details: { name: string; visibility?: DocumentFile['visibility'] }) => {
     if (!supabase || !profile) {
-        console.warn("Supabase not configured. Simulating document add.");
-        const newDoc: DocumentFile = {
-            id: new Date().getTime(),
-            user_id: 'fallback-user',
-            name: details.name,
-            size: `${(file.size / 1024).toFixed(1)} KB`,
-            created_at: new Date().toISOString(),
-            visibility: details.visibility || 'private',
-            file_path: '',
-        };
-        setDocuments(prev => [newDoc, ...prev]);
-        return;
+      console.warn("Supabase not configured. Simulating document add.");
+      const newDoc: DocumentFile = {
+        id: new Date().getTime(),
+        user_id: 'fallback-user',
+        name: details.name,
+        size: `${(file.size / 1024).toFixed(1)} KB`,
+        created_at: new Date().toISOString(),
+        visibility: details.visibility || 'private',
+        file_path: '',
+      };
+      setDocuments(prev => [newDoc, ...prev]);
+      return;
     }
-    
+
     setError(null);
     // Fail fast if auth is missing/mismatched (common on mobile when storage is cleared or session expires).
     if (!session?.user?.id) {
@@ -159,7 +159,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (session.user.id !== profile.id) {
       throw new Error('Session mismatch. Please sign out and sign in again.');
     }
-    
+
     // Prefer Vercel serverless upload to avoid mobile browser -> Supabase Storage upload issues.
     // Falls back to direct upload for local dev or if the endpoint isn't available.
     try {
@@ -212,11 +212,11 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (uploadError) throw uploadError;
 
     const newDocPayload = {
-        user_id: profile.id,
-        name: details.name,
-        size: `${(file.size / 1024).toFixed(1)} KB`,
-        visibility: (details.visibility || 'private') as const,
-        file_path: filePath,
+      user_id: profile.id,
+      name: details.name,
+      size: `${(file.size / 1024).toFixed(1)} KB`,
+      visibility: (details.visibility || 'private') as const,
+      file_path: filePath,
     };
 
     const insertCall = supabase
@@ -237,36 +237,110 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
   }
 
   const updateDocument = async (docId: number, updates: Partial<DocumentFile>) => {
-      if (!supabase) {
-        console.warn("Supabase not configured. Simulating document update.");
-        setDocuments(docs => docs.map(d => d.id === docId ? { ...d, ...updates } : d));
-        return;
-      }
-      setError(null);
-      const updateCall = supabase
-          .from('documents')
-          .update(updates)
-          .eq('id', docId)
-          .select()
-          .single();
-      const { data, error } = await withTimeout(
-        updateCall,
-        15000,
-        'Updating document timed out. Please retry.'
-      );
-      
-      if (error) throw error;
-
-      setDocuments(docs => docs.map(d => d.id === docId ? { ...d, ...data } : d));
-  }
-  
-  const deleteDocument = async (docId: number) => {
     if (!supabase) {
-        console.warn("Supabase not configured. Simulating document delete.");
-        setDocuments(docs => docs.filter(d => d.id !== docId));
-        return;
+      console.warn("Supabase not configured. Simulating document update.");
+      setDocuments(docs => docs.map(d => d.id === docId ? { ...d, ...updates } : d));
+      return;
     }
     setError(null);
+
+    // Prefer API endpoint for mobile compatibility
+    if (session?.access_token) {
+      try {
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 15000);
+        const resp = await fetch('/api/update-document', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ docId, updates }),
+          signal: controller.signal,
+        });
+        window.clearTimeout(timeout);
+
+        if (resp.status !== 404) {
+          const json = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            throw new Error(json?.error || `Update failed (${resp.status})`);
+          }
+          if (json.document) {
+            setDocuments(docs => docs.map(d => d.id === docId ? { ...d, ...json.document } : d));
+          }
+          return;
+        }
+      } catch (e: any) {
+        if (e?.name === 'AbortError') {
+          throw new Error('Update timed out. Please retry.');
+        }
+        if (!String(e?.message || '').includes('404')) {
+          throw e;
+        }
+      }
+    }
+
+    // Fallback: direct Supabase (for local dev)
+    const updateCall = supabase
+      .from('documents')
+      .update(updates)
+      .eq('id', docId)
+      .select()
+      .single();
+    const { data, error } = await withTimeout(
+      updateCall,
+      15000,
+      'Updating document timed out. Please retry.'
+    );
+
+    if (error) throw error;
+
+    setDocuments(docs => docs.map(d => d.id === docId ? { ...d, ...data } : d));
+  }
+
+  const deleteDocument = async (docId: number) => {
+    if (!supabase) {
+      console.warn("Supabase not configured. Simulating document delete.");
+      setDocuments(docs => docs.filter(d => d.id !== docId));
+      return;
+    }
+    setError(null);
+
+    // Prefer API endpoint for mobile compatibility
+    if (session?.access_token) {
+      try {
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 20000);
+        const resp = await fetch('/api/delete-document', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ docId }),
+          signal: controller.signal,
+        });
+        window.clearTimeout(timeout);
+
+        if (resp.status !== 404) {
+          const json = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            throw new Error(json?.error || `Delete failed (${resp.status})`);
+          }
+          setDocuments(docs => docs.filter(d => d.id !== docId));
+          return;
+        }
+      } catch (e: any) {
+        if (e?.name === 'AbortError') {
+          throw new Error('Delete timed out. Please retry.');
+        }
+        if (!String(e?.message || '').includes('404')) {
+          throw e;
+        }
+      }
+    }
+
+    // Fallback: direct Supabase (for local dev)
     const docToDelete = documents.find(d => d.id === docId);
     if (!docToDelete) return;
 
