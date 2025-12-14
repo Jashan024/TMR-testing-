@@ -10,6 +10,9 @@ export const config = {
 function json(res, status, body) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
   res.end(JSON.stringify(body));
 }
 
@@ -21,7 +24,12 @@ function requireEnv(name) {
 
 function parseMultipart(req) {
   return new Promise((resolve, reject) => {
-    const bb = Busboy({ headers: req.headers });
+    const bb = Busboy({
+      headers: req.headers,
+      limits: {
+        fileSize: 15 * 1024 * 1024, // 15MB limit
+      }
+    });
     const fields = {};
     let file = null;
 
@@ -40,7 +48,7 @@ function parseMultipart(req) {
         chunks.push(d);
         size += d.length;
       });
-      stream.on('limit', () => {});
+      stream.on('limit', () => { });
       stream.on('end', () => {
         file = {
           filename: info.filename || 'upload',
@@ -58,6 +66,16 @@ function parseMultipart(req) {
 }
 
 export default async function handler(req, res) {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+    res.statusCode = 200;
+    res.end();
+    return;
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return json(res, 405, { error: 'Method not allowed' });
