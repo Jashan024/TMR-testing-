@@ -449,7 +449,7 @@ const DocumentsPage: React.FC = () => {
                 </p>
               )}
               <p className="mt-2 text-xs text-gray-500">
-                Works on mobile and desktop. Max 15MB.
+                Accepts all file types (PDF, DOC, DOCX, images, etc.). Max 15MB.
               </p>
             </div>
           </div>
