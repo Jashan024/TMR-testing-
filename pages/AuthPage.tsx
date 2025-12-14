@@ -162,15 +162,15 @@ const AuthPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col px-4 relative overflow-x-hidden">
-            <header className="w-full p-6 sm:p-8 flex-shrink-0">
+        <div className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden">
+            <header className="absolute top-0 left-0 w-full p-6 sm:p-8 z-20">
                 <div className="container mx-auto flex justify-start">
                     <Link to="/" className="text-2xl font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
                         TMR
                     </Link>
                 </div>
             </header>
-            <main className="flex-1 flex items-center justify-center w-full max-w-md mx-auto animate-fade-in-up py-8">
+            <main className="w-full max-w-md mx-auto z-10 animate-fade-in-up">
                 {!role ? (
                     <Card className="p-8 text-center">
                         <h2 className="text-2xl font-bold text-center text-white mb-2">Join as a Candidate or Recruiter</h2>

@@ -16,7 +16,7 @@ declare const __BUILD_ID__: string;
 
 const DocumentsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { profile, session, loading: profileLoading } = useProfile();
+  const { profile, loading: profileLoading } = useProfile();
   const { documents, addDocument, updateDocument, deleteDocument, loading: documentsLoading, error: documentsError, refetch } = useDocuments();
 
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -99,34 +99,6 @@ const DocumentsPage: React.FC = () => {
     if (!supabase) return doc.public_url || null;
     if (doc.visibility === 'public' && doc.public_url) return doc.public_url;
 
-    // Prefer server endpoint for mobile compatibility
-    if (session?.access_token) {
-      try {
-        const controller = new AbortController();
-        const timeout = window.setTimeout(() => controller.abort(), 15000);
-        const resp = await fetch('/api/get-document-url', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ docId: doc.id }),
-          signal: controller.signal,
-        });
-        window.clearTimeout(timeout);
-
-        if (resp.status !== 404) {
-          const json = await resp.json().catch(() => ({}));
-          if (resp.ok && json.url) {
-            return json.url;
-          }
-        }
-      } catch (e) {
-        console.error('Server signed URL error:', e);
-      }
-    }
-
-    // Fallback: direct Supabase signed URL
     try {
       const { data, error } = await supabase.storage
         .from('documents')
