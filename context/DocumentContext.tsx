@@ -76,13 +76,24 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
       return;
     }
 
+    console.log('[Upload] Starting upload for:', file.name, 'Size:', file.size);
+
     // Get the current session token for authentication
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error('[Upload] Session error:', sessionError);
+      throw new Error('Failed to get session. Please log in again.');
+    }
+
     const accessToken = sessionData?.session?.access_token;
 
     if (!accessToken) {
+      console.error('[Upload] No access token found');
       throw new Error('No active session. Please log in again.');
     }
+
+    console.log('[Upload] Got access token, preparing FormData');
 
     // Use FormData for multipart upload (works better on mobile)
     const formData = new FormData();
@@ -92,9 +103,14 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     // Use Vercel API endpoint for reliable mobile uploads
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout for mobile
+    const timeout = setTimeout(() => {
+      console.error('[Upload] Request timed out after 60s');
+      controller.abort();
+    }, 60000); // 60s timeout for mobile
 
     try {
+      console.log('[Upload] Sending request to /api/upload-document');
+
       const response = await fetch('/api/upload-document', {
         method: 'POST',
         headers: {
@@ -105,19 +121,38 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
       });
 
       clearTimeout(timeout);
+      console.log('[Upload] Response status:', response.status);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorText = await response.text();
+        console.error('[Upload] Error response:', errorText);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `Upload failed with status ${response.status}` };
+        }
         throw new Error(errorData.error || `Upload failed with status ${response.status}`);
       }
+
+      const result = await response.json();
+      console.log('[Upload] Success:', result);
 
       // Refresh the document list to get the new document
       await fetchDocuments(profile.id);
     } catch (err: any) {
       clearTimeout(timeout);
+      console.error('[Upload] Error:', err);
+
       if (err.name === 'AbortError') {
         throw new Error('Upload timed out. Please check your connection and try again.');
       }
+
+      // Provide more helpful error messages
+      if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+        throw new Error('Network error. Please check your internet connection and try again.');
+      }
+
       throw err;
     }
   }
