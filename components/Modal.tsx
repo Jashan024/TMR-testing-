@@ -26,12 +26,12 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center p-4 backdrop-blur-sm" 
+    <div
+      className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-start sm:items-center overflow-y-auto p-4 backdrop-blur-sm"
       onClick={onClose}
     >
-      <div 
-        className="bg-gray-800/80 rounded-2xl shadow-xl w-full max-w-lg relative border border-gray-700 animate-fade-in-up"
+      <div
+        className="bg-gray-800/80 rounded-2xl shadow-xl w-full max-w-lg relative border border-gray-700 animate-fade-in-up my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-4 border-b border-gray-700">
