@@ -52,7 +52,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   if (typeof document === 'undefined') return null;
 
   const modalUi = (
-    <div
+    <div 
       className="fixed inset-0 bg-black/70 z-50 overflow-y-auto backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
@@ -61,23 +61,23 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
     >
       {/* Flex container for centering - uses min-height to allow scrolling on small screens */}
       <div className="min-h-full flex items-start sm:items-center justify-center p-4 py-8 sm:py-4">
-        <div
+      <div 
           className="bg-gray-800/95 rounded-2xl shadow-xl w-full max-w-lg relative border border-gray-700 animate-fade-in-up my-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
+        onClick={(e) => e.stopPropagation()}
+      >
           {/* Sticky header so close button is always accessible */}
           <div className="sticky top-0 flex justify-between items-center p-4 border-b border-gray-700 bg-gray-800/95 rounded-t-2xl z-10">
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
+          <h3 className="text-lg font-semibold text-white">{title}</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-white transition p-1 -mr-1 rounded-lg hover:bg-gray-700/50"
               aria-label="Close modal"
             >
-              <CloseIcon className="w-6 h-6" />
-            </button>
-          </div>
+            <CloseIcon className="w-6 h-6" />
+          </button>
+        </div>
           <div className="p-4 sm:p-6">
-            {children}
+          {children}
           </div>
         </div>
       </div>

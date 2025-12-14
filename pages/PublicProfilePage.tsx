@@ -77,7 +77,7 @@ export const PublicProfilePage: React.FC = () => {
                     } catch (_) {}
 
                     if (!url) {
-                        const { data: urlData } = supabase!.storage.from('documents').getPublicUrl(doc.file_path);
+                    const { data: urlData } = supabase!.storage.from('documents').getPublicUrl(doc.file_path);
                         url = urlData.publicUrl;
                     }
 
