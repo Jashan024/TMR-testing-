@@ -41,7 +41,7 @@ const DocumentsPage: React.FC = () => {
     if (!profile) {
       try {
         sessionStorage.setItem('redirectUrl', `${window.location.origin}/#/documents`);
-      } catch (_) { }
+      } catch (_) {}
       navigate('/auth');
       return;
     }
@@ -449,7 +449,7 @@ const DocumentsPage: React.FC = () => {
                 </p>
               )}
               <p className="mt-2 text-xs text-gray-500">
-                Accepts all file types (PDF, DOC, DOCX, images, etc.). Max 15MB.
+                Works on mobile and desktop. Max 15MB.
               </p>
             </div>
           </div>
@@ -478,22 +478,10 @@ const DocumentsPage: React.FC = () => {
           {uploadError && <p className="text-sm text-red-400">{uploadError}</p>}
 
           <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={closeUpload}
-              disabled={false}
-              className="min-h-[44px]"
-            >
+            <Button type="button" variant="secondary" onClick={closeUpload} disabled={false}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              loading={uploadBusy}
-              disabled={!uploadFile}
-              className="min-h-[44px]"
-            >
+            <Button type="submit" variant="primary" loading={uploadBusy} disabled={!uploadFile}>
               Upload
             </Button>
           </div>
