@@ -250,23 +250,26 @@ const DocumentsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-5xl animate-fade-in-up">
-      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white">Documents</h1>
-          <p className="text-gray-300 mt-2">
-            Upload resumes, certifications, portfolios, and other files.
+      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
+        <div className="space-y-4">
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase tracking-[0.2em]">
+            Management
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">Documents</h1>
+          <p className="text-lg text-gray-400 max-w-2xl font-light">
+            Securely manage your resumes, certifications, and portfolios.
+            Toggle visibility to share specific files on your <span className="text-cyan-400/80 font-medium">public portfolio</span>.
           </p>
-          <p className="text-sm text-gray-400 mt-1">
-            Public documents can be seen on your public profile.
-          </p>
-          <p className="text-xs text-gray-600 mt-2">
-            Build: {__BUILD_ID__}
-          </p>
+          <div className="flex items-center space-x-4 pt-2">
+            <div className="text-[10px] text-gray-600 font-mono tracking-tighter bg-white/5 px-2 py-0.5 rounded border border-white/5">
+              BUILD: {__BUILD_ID__.substring(0, 8)}
+            </div>
+          </div>
         </div>
-        <div className="flex gap-3">
-          <Button onClick={openUpload} variant="primary" className="w-full sm:w-auto">
-            <UploadIcon className="w-5 h-5 mr-2" />
-            Upload
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <Button onClick={openUpload} variant="primary" className="shadow-[0_0_20px_-5px_rgba(34,211,238,0.3)]">
+            <UploadIcon className="w-5 h-5 mr-3" />
+            Upload Document
           </Button>
         </div>
       </header>
@@ -374,57 +377,59 @@ const DocumentsPage: React.FC = () => {
                     )}
                   </div>
 
+                  {/* Actions Column */}
                   {!isEditing && (
-                    <div className="flex flex-col sm:items-end gap-3">
-                      <div className="flex items-center justify-between sm:justify-end gap-3">
-                        <span className="text-sm text-gray-300">Public</span>
-                        <ToggleSwitch
-                          id={`doc_visibility_${doc.id}`}
-                          checked={isPublic}
-                          onChange={(checked) => handleToggleVisibility(doc, checked)}
-                        />
+                    <div className="flex flex-col sm:items-end gap-6 sm:gap-4 w-full sm:w-auto border-t sm:border-t-0 border-white/[0.05] pt-4 sm:pt-0">
+                      <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+                        <span className="text-sm font-medium text-gray-400 uppercase tracking-widest text-[10px]">Visibility</span>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-[10px] uppercase font-bold tracking-tighter ${isPublic ? 'text-cyan-400' : 'text-gray-500'}`}>
+                            {isPublic ? 'Public' : 'Private'}
+                          </span>
+                          <ToggleSwitch
+                            id={`doc_visibility_${doc.id}`}
+                            checked={isPublic}
+                            onChange={(checked) => handleToggleVisibility(doc, checked)}
+                          />
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-2 sm:flex gap-2">
+                      <div className="grid grid-cols-4 sm:flex gap-2 w-full sm:w-auto">
                         <button
                           type="button"
                           onClick={() => handleView(doc)}
                           disabled={isRowBusy}
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-lg bg-gray-700/50 hover:bg-gray-700 text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          className="flex items-center justify-center aspect-square sm:aspect-auto sm:px-4 sm:py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/[0.05] transition-all active:scale-90"
                           title="View"
                         >
                           <EyeIcon className="w-5 h-5" />
-                          <span className="ml-2 sm:hidden">View</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDownload(doc)}
                           disabled={isRowBusy}
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-lg bg-gray-700/50 hover:bg-gray-700 text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          className="flex items-center justify-center aspect-square sm:aspect-auto sm:px-4 sm:py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/[0.05] transition-all active:scale-90"
                           title="Download"
                         >
                           <DownloadIcon className="w-5 h-5" />
-                          <span className="ml-2 sm:hidden">Download</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => startRename(doc)}
                           disabled={isRowBusy}
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-lg bg-gray-700/50 hover:bg-gray-700 text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          className="flex items-center justify-center aspect-square sm:aspect-auto sm:px-4 sm:py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/[0.05] transition-all active:scale-90"
                           title="Rename"
                         >
                           <PencilIcon className="w-5 h-5" />
-                          <span className="ml-2 sm:hidden">Rename</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(doc)}
                           disabled={isRowBusy}
-                          className="inline-flex items-center justify-center px-3 py-2 rounded-lg bg-red-900/30 hover:bg-red-900/40 text-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                          className="flex items-center justify-center aspect-square sm:aspect-auto sm:px-4 sm:py-2.5 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/10 transition-all active:scale-90"
                           title="Delete"
                         >
                           <TrashIcon className="w-5 h-5" />
-                          <span className="ml-2 sm:hidden">Delete</span>
                         </button>
                       </div>
                     </div>

@@ -21,7 +21,7 @@ const fallbackDocuments: DocumentFile[] = [
   { id: 3, user_id: 'fallback-user', name: 'Design_Portfolio_2023.pdf', size: '5.8 MB', created_at: '2023-09-15', visibility: 'public', file_path: '', public_url: '#' },
 ];
 
-const withTimeout = async <T,>(promise: Promise<T>, ms: number, message: string): Promise<T> => {
+const withTimeout = async <T = any,>(promise: any, ms: number, message: string): Promise<T> => {
   let timeoutId: number | undefined;
   const timeoutPromise = new Promise<T>((_, reject) => {
     timeoutId = window.setTimeout(() => reject(new Error(message)), ms);
@@ -62,13 +62,17 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         window.clearTimeout(timeout);
 
         if (resp.status !== 404) {
-          const json = await resp.json().catch(() => ({}));
-          if (!resp.ok) {
-            throw new Error(json?.error || `Failed to fetch documents (${resp.status})`);
+          const contentType = resp.headers.get('content-type');
+          if (resp.ok && contentType && contentType.includes('application/json')) {
+            const json = await resp.json().catch(() => ({}));
+            if (json && Array.isArray(json.documents)) {
+              setDocuments(json.documents as DocumentFile[]);
+              setLoading(false);
+              return;
+            }
           }
-          setDocuments((json.documents || []) as DocumentFile[]);
-          setLoading(false);
-          return;
+          // If not 404 but also not valid JSON documents, fall through to direct fetch
+          console.warn(`API responded with ${resp.status} (${contentType}), but no documents found. Falling back to Supabase.`);
         }
         // 404 means endpoint not deployed (local dev) - fall through to direct fetch
       } catch (e: any) {
@@ -94,7 +98,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
-      const { data: docRecords, error } = await withTimeout(
+      const { data: docRecords, error } = await withTimeout<{ data: any[] | null, error: any }>(
         query,
         15000,
         'Fetching documents timed out. Please check your connection and try again.'
@@ -179,12 +183,14 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
       window.clearTimeout(timeout);
 
       if (resp.status !== 404) {
-        const json = await resp.json().catch(() => ({}));
-        if (!resp.ok) {
-          throw new Error(json?.error || `Upload failed (${resp.status})`);
+        const contentType = resp.headers.get('content-type');
+        if (resp.ok && contentType && contentType.includes('application/json')) {
+          const json = await resp.json().catch(() => ({}));
+          await fetchDocuments(profile.id, session.access_token);
+          return;
         }
-        await fetchDocuments(profile.id, session.access_token);
-        return;
+        // If not successful or not JSON, fall through
+        console.warn(`Upload API responded with ${resp.status} (${contentType}). Falling back to direct upload.`);
       }
     } catch (e: any) {
       // If the endpoint exists but fails, surface that error. If it was an abort, show clear message.
@@ -203,7 +209,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     const uploadCall = supabase.storage
       .from('documents')
       .upload(filePath, file);
-    const { error: uploadError } = await withTimeout(
+    const { error: uploadError } = await withTimeout<any>(
       uploadCall,
       90000,
       'Upload timed out. Mobile networks can be slow—please retry on a stronger connection.'
@@ -215,7 +221,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
       user_id: profile.id,
       name: details.name,
       size: `${(file.size / 1024).toFixed(1)} KB`,
-      visibility: (details.visibility || 'private') as const,
+      visibility: (details.visibility || 'private'),
       file_path: filePath,
     };
 
@@ -224,7 +230,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
       .insert(newDocPayload)
       .select()
       .single();
-    const { data, error: insertError } = await withTimeout(
+    const { data, error: insertError } = await withTimeout<{ data: any, error: any }>(
       insertCall,
       15000,
       'Saving document record timed out. Please retry.'
@@ -261,14 +267,15 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         window.clearTimeout(timeout);
 
         if (resp.status !== 404) {
-          const json = await resp.json().catch(() => ({}));
-          if (!resp.ok) {
-            throw new Error(json?.error || `Update failed (${resp.status})`);
+          const contentType = resp.headers.get('content-type');
+          if (resp.ok && contentType && contentType.includes('application/json')) {
+            const json = await resp.json().catch(() => ({}));
+            if (json.document) {
+              setDocuments(docs => docs.map(d => d.id === docId ? { ...d, ...json.document } : d));
+              return;
+            }
           }
-          if (json.document) {
-            setDocuments(docs => docs.map(d => d.id === docId ? { ...d, ...json.document } : d));
-          }
-          return;
+          console.warn(`Update API responded with ${resp.status} (${contentType}). Falling back to direct update.`);
         }
       } catch (e: any) {
         if (e?.name === 'AbortError') {
@@ -287,7 +294,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
       .eq('id', docId)
       .select()
       .single();
-    const { data, error } = await withTimeout(
+    const { data, error } = await withTimeout<{ data: any, error: any }>(
       updateCall,
       15000,
       'Updating document timed out. Please retry.'
@@ -323,12 +330,12 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         window.clearTimeout(timeout);
 
         if (resp.status !== 404) {
-          const json = await resp.json().catch(() => ({}));
-          if (!resp.ok) {
-            throw new Error(json?.error || `Delete failed (${resp.status})`);
+          const contentType = resp.headers.get('content-type');
+          if (resp.ok && contentType && contentType.includes('application/json')) {
+            setDocuments(docs => docs.filter(d => d.id !== docId));
+            return;
           }
-          setDocuments(docs => docs.filter(d => d.id !== docId));
-          return;
+          console.warn(`Delete API responded with ${resp.status} (${contentType}). Falling back to direct delete.`);
         }
       } catch (e: any) {
         if (e?.name === 'AbortError') {
@@ -364,7 +371,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
       .from('documents')
       .delete()
       .eq('id', docId);
-    const { error: dbError } = await withTimeout(
+    const { error: dbError } = await withTimeout<{ error: any }>(
       deleteCall,
       15000,
       'Deleting document record timed out. Please retry.'

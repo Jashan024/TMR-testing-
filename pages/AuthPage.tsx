@@ -13,7 +13,7 @@ type AuthView = 'signin' | 'signup' | 'forgot_password';
 const AuthPage: React.FC = () => {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
-    
+
     const initialRole = queryParams.get('role');
     const [role, setRole] = useState<'candidate' | 'recruiter' | null>(
         initialRole === 'candidate' || initialRole === 'recruiter' ? initialRole : null
@@ -52,18 +52,22 @@ const AuthPage: React.FC = () => {
                 window.location.href = redirectUrl;
                 return;
             }
-            
+
             if (profile?.role === 'recruiter') {
                 navigate('/candidates');
+            } else if (view === 'signup' && !isProfileCreated) {
+                // New registrations go to onboarding to complete their profile
+                navigate('/onboarding');
             } else {
-                navigate(isProfileCreated ? '/profile/me' : '/onboarding');
+                // Return users (signin) go directly to their portfolio
+                navigate('/profile/me');
             }
         }
     }, [userId, isProfileCreated, profile, profileLoading, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!supabase) {
             setError("Authentication is unavailable: App is not connected to a backend service.");
             return;
@@ -74,7 +78,7 @@ const AuthPage: React.FC = () => {
         const name = formData.get('name') as string;
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
-        
+
         setError('');
         setMessage('');
 
@@ -91,9 +95,9 @@ const AuthPage: React.FC = () => {
             setError('Please enter your email address to reset your password.');
             return;
         }
-        
+
         setFormLoading(true);
-        
+
         try {
             if (view === 'signup') {
                 // Prevent signup for recruiters
@@ -103,20 +107,20 @@ const AuthPage: React.FC = () => {
                     setView('signin');
                     return;
                 }
-                
-                const { data, error } = await supabase.auth.signUp({ 
-                    email, 
-                    password, 
-                    options: { 
-                        data: { 
+
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
                             full_name: name,
                             role: role,
-                        } 
-                    } 
+                        }
+                    }
                 });
 
                 if (error) throw error;
-                
+
                 // On successful sign-up, the onAuthStateChange listener will handle setting the session
                 // and the useEffect hook above will trigger the redirect.
                 // We only need to show a message if email confirmation is required.
@@ -129,13 +133,13 @@ const AuthPage: React.FC = () => {
                     password,
                 });
                 if (error) throw error;
-                
+
                 if (!data.session) {
                     throw new Error('Sign in failed, please try again.');
                 }
                 // On successful sign-in, the onAuthStateChange listener will fire, which updates the
                 // `session` state. The useEffect hook at the top of this component will then handle redirection.
-                
+
             } else if (view === 'forgot_password') {
                 const { error } = await supabase.auth.resetPasswordForEmail(email, {
                     // This path should point to where your app will handle the password update.
@@ -154,49 +158,53 @@ const AuthPage: React.FC = () => {
 
     const tabButtonClasses = (tabName: 'signin' | 'signup') => {
         const isActive = view === tabName;
-        return `w-1/2 py-3 text-center font-semibold transition-all duration-300 rounded-t-lg cursor-pointer ${
-            isActive 
-                ? 'text-white bg-gray-800/80 shadow-inner' 
-                : 'text-gray-400 bg-gray-900/50 hover:bg-gray-800/60 hover:text-gray-300'
-        }`;
+        return `w-1/2 py-4 text-center font-bold transition-all duration-500 cursor-pointer text-sm uppercase tracking-widest ${isActive
+            ? 'text-white border-b-2 border-cyan-500 bg-white/5'
+            : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.02]'
+            }`;
     };
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden">
             <header className="absolute top-0 left-0 w-full p-6 sm:p-8 z-20">
-                <div className="container mx-auto flex justify-start">
-                    <Link to="/" className="text-2xl font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
-                        TMR
+                <div className="container mx-auto flex items-center">
+                    <Link to="/" className="text-3xl font-bold tracking-tighter text-white">
+                        TMR<span className="text-cyan-400">.</span>
                     </Link>
                 </div>
             </header>
             <main className="w-full max-w-md mx-auto z-10 animate-fade-in-up">
                 {!role ? (
-                    <Card className="p-8 text-center">
-                        <h2 className="text-2xl font-bold text-center text-white mb-2">Join as a Candidate or Recruiter</h2>
-                        <p className="text-gray-400 mb-8">Please select how you'd like to use the platform.</p>
-                        <div className="space-y-4">
-                            <button 
+                    <Card className="p-10 text-center relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
+                        <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">Join the Elite</h2>
+                        <p className="text-gray-400 mb-10 font-light">Select your path to continue</p>
+                        <div className="grid grid-cols-1 gap-4">
+                            <button
                                 onClick={() => setRole('candidate')}
-                                className="w-full text-left p-6 bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                className="relative text-left p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-3xl transition-all duration-500 hover:border-cyan-500/50 hover:shadow-[0_0_20px_-10px_rgba(34,211,238,0.5)] active:scale-95 group/btn"
                             >
                                 <div className="flex items-center">
-                                    <UserIcon className="w-8 h-8 text-cyan-400 mr-4 flex-shrink-0"/>
+                                    <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center mr-5 group-hover/btn:bg-cyan-500/20 transition-colors">
+                                        <UserIcon className="w-8 h-8 text-cyan-400" />
+                                    </div>
                                     <div>
-                                        <h3 className="text-lg font-semibold text-white">I'm a Candidate</h3>
-                                        <p className="text-gray-400">Create a profile and let opportunities find you.</p>
+                                        <h3 className="text-xl font-bold text-white mb-1">Candidate</h3>
+                                        <p className="text-sm text-gray-400 leading-tight">Build your profile & get hired.</p>
                                     </div>
                                 </div>
                             </button>
-                            <button 
+                            <button
                                 onClick={() => { setRole('recruiter'); setView('signin'); }}
-                                className="w-full text-left p-6 bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                className="relative text-left p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-3xl transition-all duration-500 hover:border-blue-500/50 hover:shadow-[0_0_20px_-10px_rgba(37,99,235,0.5)] active:scale-95 group/btn"
                             >
                                 <div className="flex items-center">
-                                    <BriefcaseIcon className="w-8 h-8 text-cyan-400 mr-4 flex-shrink-0"/>
+                                    <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mr-5 group-hover/btn:bg-blue-500/20 transition-colors">
+                                        <BriefcaseIcon className="w-8 h-8 text-blue-400" />
+                                    </div>
                                     <div>
-                                        <h3 className="text-lg font-semibold text-white">I'm a Recruiter</h3>
-                                        <p className="text-gray-400">Find and connect with top-tier talent.</p>
+                                        <h3 className="text-xl font-bold text-white mb-1">Recruiter</h3>
+                                        <p className="text-sm text-gray-400 leading-tight">Find & connect with top talent.</p>
                                     </div>
                                 </div>
                             </button>
@@ -207,30 +215,30 @@ const AuthPage: React.FC = () => {
                         {view !== 'forgot_password' && (
                             <div className={`flex ${role === 'recruiter' ? 'justify-center' : ''}`}>
                                 {role !== 'recruiter' && (
-                                    <button 
+                                    <button
                                         type="button"
-                                        onClick={(e) => { 
+                                        onClick={(e) => {
                                             e.preventDefault();
                                             e.stopPropagation();
-                                            setView('signup'); 
-                                            setError(''); 
-                                            setMessage(''); 
-                                        }} 
+                                            setView('signup');
+                                            setError('');
+                                            setMessage('');
+                                        }}
                                         className={tabButtonClasses('signup')}
                                         aria-pressed={view === 'signup'}
                                     >
                                         Sign Up
                                     </button>
                                 )}
-                                <button 
+                                <button
                                     type="button"
-                                    onClick={(e) => { 
+                                    onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        setView('signin'); 
-                                        setError(''); 
-                                        setMessage(''); 
-                                    }} 
+                                        setView('signin');
+                                        setError('');
+                                        setMessage('');
+                                    }}
                                     className={role === 'recruiter' ? tabButtonClasses('signin').replace('w-1/2', 'w-48') : tabButtonClasses('signin')}
                                     aria-pressed={view === 'signin'}
                                 >
@@ -260,7 +268,7 @@ const AuthPage: React.FC = () => {
                                     </Button>
                                 </form>
                             )}
-                            
+
                             {view === 'signin' && (
                                 <form onSubmit={handleSubmit} className="space-y-6">
                                     <h2 className="text-2xl font-bold text-center text-white">Welcome Back</h2>
@@ -295,7 +303,7 @@ const AuthPage: React.FC = () => {
                     </Card>
                 )}
             </main>
-        </div>
+        </div >
     );
 };
 

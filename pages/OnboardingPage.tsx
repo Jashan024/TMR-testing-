@@ -16,9 +16,9 @@ const ProgressBar: React.FC<{ step: number }> = ({ step }) => {
     const totalSteps = 3;
     const progress = (step / totalSteps) * 100;
     return (
-        <div className="w-full bg-gray-700 rounded-full h-2.5 my-8">
-            <div 
-                className="bg-gradient-to-r from-cyan-500 to-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out" 
+        <div className="w-full bg-white/5 rounded-full h-1.5 my-10 overflow-hidden border border-white/5">
+            <div
+                className="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full transition-all duration-1000 ease-in-out shadow-[0_0_15px_-3px_rgba(34,211,238,0.5)]"
                 style={{ width: `${progress}%` }}
             ></div>
         </div>
@@ -55,13 +55,13 @@ const TagInput: React.FC<TagInputProps> = ({ label, tags, setTags, placeholder, 
     return (
         <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
-            <div className="relative flex flex-wrap items-center gap-2 p-2.5 bg-gray-700/50 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-cyan-500 focus-within:border-cyan-500 transform transition-all duration-300 focus-within:scale-[1.02]">
+            <div className="relative flex flex-wrap items-center gap-2 p-3 bg-white/[0.03] border border-white/10 rounded-2xl focus-within:ring-2 focus-within:ring-cyan-500/50 focus-within:border-cyan-500 focus-within:bg-white/[0.05] transition-all duration-300">
                 {/* FIX: Cast icon element to specify it accepts a className prop */}
                 {icon && <div className="pl-1 flex items-center pointer-events-none">{React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5 text-gray-400' })}</div>}
                 {(tags || []).map(tag => (
-                    <span key={tag} className="flex items-center bg-cyan-500/20 text-cyan-300 text-sm font-medium px-2.5 py-1 rounded">
+                    <span key={tag} className="flex items-center bg-cyan-500/10 text-cyan-400 text-xs font-bold px-3 py-1.5 rounded-xl border border-cyan-500/20 shadow-sm animate-fade-in-up">
                         {tag}
-                        <button type="button" onClick={() => removeTag(tag)} className="ml-1.5 text-cyan-200 hover:text-white">
+                        <button type="button" onClick={() => removeTag(tag)} className="ml-2 text-cyan-400/60 hover:text-white transition-colors">
                             <CloseIcon className="w-3.5 h-3.5" />
                         </button>
                     </span>
@@ -72,29 +72,29 @@ const TagInput: React.FC<TagInputProps> = ({ label, tags, setTags, placeholder, 
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
-                    className="flex-grow bg-transparent text-gray-200 placeholder-gray-500 focus:outline-none min-w-[150px] h-full p-1"
+                    className="flex-grow bg-transparent text-gray-200 placeholder-gray-500 focus:outline-none min-w-[150px] py-1 px-2 text-sm"
                 />
             </div>
-             {helperText && <p className="mt-2 text-sm text-gray-400">{helperText}</p>}
+            {helperText && <p className="mt-2 text-xs text-gray-500 italic px-1">{helperText}</p>}
         </div>
     );
 };
 
 
-const PhotoUploadForm: React.FC<{onUpload: (file: File) => void, onClose: () => void}> = ({onUpload, onClose}) => {
+const PhotoUploadForm: React.FC<{ onUpload: (file: File) => void, onClose: () => void }> = ({ onUpload, onClose }) => {
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if(e.target.files && e.target.files[0]) {
+        if (e.target.files && e.target.files[0]) {
             const selectedFile = e.target.files[0];
             setFile(selectedFile);
             if (preview) URL.revokeObjectURL(preview);
             setPreview(URL.createObjectURL(selectedFile));
         }
     }
-    
+
     const handleDragEvents = (e: React.DragEvent, dragging: boolean) => {
         e.preventDefault();
         e.stopPropagation();
@@ -117,30 +117,30 @@ const PhotoUploadForm: React.FC<{onUpload: (file: File) => void, onClose: () => 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if(!file) {
+        if (!file) {
             alert("Please select a file.");
             return;
         }
         onUpload(file);
     }
-    
+
     const dragDropClasses = isDragging ? 'border-cyan-500 bg-gray-800' : 'border-gray-600';
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             {preview ? (
-                 <div className="flex justify-center">
+                <div className="flex justify-center">
                     <img src={preview} alt="Preview" className="w-40 h-40 rounded-full object-cover border-4 border-gray-600" />
-                 </div>
+                </div>
             ) : (
-                <div 
+                <div
                     className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-300 ${dragDropClasses}`}
                     onDragEnter={(e) => handleDragEvents(e, true)}
                     onDragLeave={(e) => handleDragEvents(e, false)}
                     onDragOver={(e) => handleDragEvents(e, true)}
                     onDrop={handleDrop}
                 >
-                     <UploadIcon className="w-12 h-12 mx-auto text-gray-500" />
+                    <UploadIcon className="w-12 h-12 mx-auto text-gray-500" />
                     <label htmlFor="photo-upload" className="mt-2 block text-sm font-medium text-gray-400 cursor-pointer">
                         Drag & drop your photo here, or <span className="text-cyan-400 font-semibold">browse</span>
                     </label>
@@ -148,8 +148,8 @@ const PhotoUploadForm: React.FC<{onUpload: (file: File) => void, onClose: () => 
                 </div>
             )}
             <div className="flex justify-end space-x-3 pt-2">
-                 <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                 <Button type="submit" variant="primary" disabled={!file}>Save Photo</Button>
+                <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                <Button type="submit" variant="primary" disabled={!file}>Save Photo</Button>
             </div>
         </form>
     )
@@ -177,7 +177,7 @@ const OnboardingPage: React.FC = () => {
     useEffect(() => {
         if (profile) setFormData(profile);
     }, [profile]);
-    
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -198,7 +198,7 @@ const OnboardingPage: React.FC = () => {
             alert("You must be logged in to upload a photo.");
             return;
         }
-        
+
         const fileExt = file.name.split('.').pop();
         const filePath = `${profile.id}/profile.${fileExt}`;
 
@@ -214,7 +214,7 @@ const OnboardingPage: React.FC = () => {
                 .getPublicUrl(filePath);
 
             const newPhotoUrl = `${data.publicUrl}?t=${new Date().getTime()}`;
-            
+
             await updateProfile({ photo_url: newPhotoUrl });
 
         } catch (error) {
@@ -259,7 +259,7 @@ const OnboardingPage: React.FC = () => {
                         {isProfileCreated ? 'Edit Your Profile' : 'Create Your Profile'}
                     </h1>
                     <p className="text-xl text-gray-300 mt-2">
-                    Step {step} of 3: {step === 1 ? "The Basics" : step === 2 ? "Your Story" : "Your Expertise"}
+                        Step {step} of 3: {step === 1 ? "The Basics" : step === 2 ? "Your Story" : "Your Expertise"}
                     </p>
                     <ProgressBar step={step} />
                 </header>
@@ -274,8 +274,8 @@ const OnboardingPage: React.FC = () => {
                                             <label className="block text-sm font-medium text-gray-300 mb-2 text-center sm:text-left">Profile Photo</label>
                                             <div className="relative group">
                                                 {formData.photo_url ? (
-                                                     <img src={formData.photo_url} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-gray-600"/>
-                                                ): (
+                                                    <img src={formData.photo_url} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-gray-600" />
+                                                ) : (
                                                     <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center border-4 border-gray-600">
                                                         <UserIcon className="w-12 h-12 text-gray-500" />
                                                     </div>
@@ -305,14 +305,14 @@ const OnboardingPage: React.FC = () => {
                             {step === 2 && (
                                 <>
                                     <Input label="Years of Experience" name="experience" type="number" value={formData.experience} onChange={handleChange} placeholder="e.g. 8" required icon={<CalendarDaysIcon />} />
-                                    <LocationAutocompleteInput 
-                                        label="Location" 
-                                        name="location" 
-                                        value={formData.location || ''} 
-                                        onChange={handleChange} 
-                                        placeholder="e.g. Remote, USA" 
-                                        required 
-                                        icon={<MapPinIcon />} 
+                                    <LocationAutocompleteInput
+                                        label="Location"
+                                        name="location"
+                                        value={formData.location || ''}
+                                        onChange={handleChange}
+                                        placeholder="e.g. Remote, USA"
+                                        required
+                                        icon={<MapPinIcon />}
                                     />
                                     <Textarea label="Bio" name="bio" value={formData.bio} onChange={handleChange} placeholder="Tell recruiters a little about yourself, your goals, and what you're passionate about." required />
                                 </>

@@ -1,11 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ThatsMyRecruiter.com - Your Career, Under Your Control</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ThatsMyRecruiter.com - Your Career, Under Your Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              dark: '#0a0f18',
+              surface: '#161b22',
+              accent: '#22d3ee',
+            }
+          }
+        }
+      }
+    }
+  </script>
   <script type="importmap">
 {
   "imports": {
@@ -17,42 +39,97 @@
   }
 }
 </script>
-<style>
-  body {
-    background: linear-gradient(-45deg, #111827, #030712, #1f2937, #020617);
-    background-size: 400% 400%;
-    animation: gradientBG 20s ease infinite;
-  }
+  <style>
+    :root {
+      --bg-dark: #0a0f18;
+      --bg-accent: #111827;
+    }
 
-  @keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
+    body {
+      background-color: var(--bg-dark);
+      background-image:
+        radial-gradient(at 0% 0%, rgba(34, 211, 238, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(37, 99, 235, 0.05) 0px, transparent 50%);
+      background-attachment: fixed;
+      font-family: 'Outfit', sans-serif;
+    }
 
-  @keyframes fade-in-up {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-  }
-  .animate-fade-in-up {
-      animation: fade-in-up 0.5s ease-out forwards;
-  }
+    @keyframes fade-in-up {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
 
-  /* Magic Loader Styles */
-  @keyframes magic-glow {
-    0%, 100% { box-shadow: 0 0 20px 5px rgba(0, 255, 255, 0.4); }
-    50% { box-shadow: 0 0 35px 15px rgba(0, 255, 255, 0.7); }
-  }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
-  @keyframes magic-sparkle {
-    0% { transform: scale(0); opacity: 0; }
-    50% { transform: scale(1.2); opacity: 1; }
-    100% { transform: scale(0); opacity: 0; }
-  }
-</style>
+    @keyframes slide-in-left {
+      from {
+        opacity: 0;
+        transform: translateX(-40px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slide-in-right {
+      from {
+        opacity: 0;
+        transform: translateX(40px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .animate-fade-in-up {
+      animation: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .animate-slide-in-left {
+      animation: slide-in-left 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .animate-slide-in-right {
+      animation: slide-in-right 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .reveal-hidden {
+      opacity: 0;
+      transition: none;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0a0f18;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #1f2937;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #374151;
+    }
+  </style>
 </head>
-  <body class="bg-gray-900 text-gray-200">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+
+<body class="text-gray-200">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>
