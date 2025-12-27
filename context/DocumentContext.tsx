@@ -332,17 +332,21 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
         if (resp.status !== 404) {
           const contentType = resp.headers.get('content-type');
           if (resp.ok && contentType && contentType.includes('application/json')) {
+            // Success - immediately filter out locally and trigger a refresh to be safe
             setDocuments(docs => docs.filter(d => d.id !== docId));
+            await fetchDocuments(profile?.id, session?.access_token);
             return;
           }
-          console.warn(`Delete API responded with ${resp.status} (${contentType}). Falling back to direct delete.`);
+          const errorData = await resp.json().catch(() => ({}));
+          throw new Error(errorData.error || `Delete failed with status ${resp.status}`);
         }
       } catch (e: any) {
         if (e?.name === 'AbortError') {
           throw new Error('Delete timed out. Please retry.');
         }
         if (!String(e?.message || '').includes('404')) {
-          throw e;
+          console.error('API Delete Error:', e);
+          throw e; // Rethrow to let the page handle it
         }
       }
     }
@@ -380,6 +384,7 @@ export const DocumentProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (dbError) throw dbError;
 
     setDocuments(docs => docs.filter(d => d.id !== docId));
+    await fetchDocuments(profile?.id, session?.access_token);
   }
 
   return (

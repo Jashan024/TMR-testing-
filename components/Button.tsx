@@ -23,12 +23,12 @@ const Button: React.FC<ButtonProps> = ({
   disabled = false,
   loading = false
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center px-6 py-3 font-semibold text-center rounded-2xl transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]';
+  const baseStyles = 'inline-flex items-center justify-center px-6 py-3 font-semibold text-center rounded-2xl transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]';
 
   const variantStyles = {
-    primary: 'text-white bg-gradient-to-br from-cyan-500 to-blue-600 hover:shadow-[0_0_25px_-5px_rgba(34,211,238,0.4)] hover:brightness-110',
-    secondary: 'bg-white/10 text-white hover:bg-white/20 border border-white/10 backdrop-blur-md',
-    outline: 'border-2 border-cyan-500/50 bg-transparent text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400 focus:ring-cyan-600 shadow-sm',
+    primary: 'text-white bg-gradient-to-br from-emerald-500 to-emerald-700 hover:shadow-[0_0_25px_-5px_rgba(16,185,129,0.4)] hover:brightness-110 shadow-sm',
+    secondary: 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border border-zinc-200',
+    outline: 'border-2 border-emerald-500/30 bg-transparent text-emerald-600 hover:bg-emerald-50 hover:border-emerald-500 focus:ring-emerald-500 shadow-sm',
   };
 
   const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${className}`;

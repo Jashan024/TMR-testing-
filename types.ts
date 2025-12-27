@@ -7,11 +7,11 @@ export interface UserProfile {
   industry: 'IT' | 'Healthcare' | 'Other' | '';
   experience: string;
   location: string;
-  bio: string;
+  bio?: string;
   skills: string[];
-  roles: string[];
-  certifications: string[];
-  portfolio_url: string;
+  roles?: string[];
+  certifications?: string[];
+  portfolio_url?: string;
   role: 'candidate' | 'recruiter';
 }
 

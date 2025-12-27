@@ -16,7 +16,7 @@ import MessagesPage from './pages/MessagesPage';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
-  const showHeader = !['/', '/auth'].includes(location.pathname);
+  const showHeader = !['/', '/auth', '/onboarding'].includes(location.pathname);
 
   return (
     <>

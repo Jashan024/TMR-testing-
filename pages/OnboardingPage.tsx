@@ -1,6 +1,4 @@
-
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../context/ProfileContext';
 import type { UserProfile } from '../types';
@@ -8,78 +6,37 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 import Modal from '../components/Modal';
 import { Input, Select, Textarea } from '../components/Input';
-import { UserIcon, BriefcaseIcon, BuildingOfficeIcon, CalendarDaysIcon, MapPinIcon, LinkIcon, TagIcon, AcademicCapIcon, CloseIcon, CameraIcon, UploadIcon, LoaderIcon } from '../components/Icons';
+import { UserIcon, BriefcaseIcon, BuildingOfficeIcon, CalendarDaysIcon, MapPinIcon, TagIcon, CameraIcon, UploadIcon, LoaderIcon, CloseIcon, LogOutIcon } from '../components/Icons';
 import { supabase } from '../lib/supabaseClient';
 import LocationAutocompleteInput from '../components/LocationAutocompleteInput';
 
-const ProgressBar: React.FC<{ step: number }> = ({ step }) => {
-    const totalSteps = 3;
-    const progress = (step / totalSteps) * 100;
-    return (
-        <div className="w-full bg-white/5 rounded-full h-1.5 my-10 overflow-hidden border border-white/5">
-            <div
-                className="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full transition-all duration-1000 ease-in-out shadow-[0_0_15px_-3px_rgba(34,211,238,0.5)]"
-                style={{ width: `${progress}%` }}
-            ></div>
-        </div>
-    );
+const INDUSTRY_SKILLS: Record<string, string[]> = {
+    'IT': [
+        'React', 'TypeScript', 'Node.js', 'Next.js', 'Tailwind CSS', 'Python', 'AWS', 'Docker',
+        'GraphQL', 'SQL', 'Git', 'UI/UX Design', 'Figma', 'System Architecture',
+        'Communication', 'Teamwork', 'Project Management', 'Problem Solving', 'Agile/Scrum'
+    ],
+    'Healthcare': [
+        'Patient Care', 'Surgical Assistance', 'EMR/EHR', 'CPR Certified', 'ACLs', 'BLS',
+        'Phlebotomy', 'Wound Care', 'Triage', 'Medication Administration', 'Vitals Monitoring',
+        'Communication', 'Compassion', 'Critical Thinking', 'Teamwork', 'Patient Advocacy', 'LPN', 'LNA'
+    ]
 };
 
-interface TagInputProps {
-    label: string;
-    tags: string[];
-    setTags: (tags: string[]) => void;
-    placeholder: string;
-    icon: React.ReactNode;
-    helperText?: string;
-}
-
-const TagInput: React.FC<TagInputProps> = ({ label, tags, setTags, placeholder, icon, helperText }) => {
-    const [inputValue, setInputValue] = useState('');
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault();
-            const newTag = inputValue.trim();
-            if (newTag && !tags.includes(newTag)) {
-                setTags([...tags, newTag]);
-            }
-            setInputValue('');
-        }
-    };
-
-    const removeTag = (tagToRemove: string) => {
-        setTags(tags.filter(tag => tag !== tagToRemove));
-    };
-
-    return (
-        <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
-            <div className="relative flex flex-wrap items-center gap-2 p-3 bg-white/[0.03] border border-white/10 rounded-2xl focus-within:ring-2 focus-within:ring-cyan-500/50 focus-within:border-cyan-500 focus-within:bg-white/[0.05] transition-all duration-300">
-                {/* FIX: Cast icon element to specify it accepts a className prop */}
-                {icon && <div className="pl-1 flex items-center pointer-events-none">{React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5 text-gray-400' })}</div>}
-                {(tags || []).map(tag => (
-                    <span key={tag} className="flex items-center bg-cyan-500/10 text-cyan-400 text-xs font-bold px-3 py-1.5 rounded-xl border border-cyan-500/20 shadow-sm animate-fade-in-up">
-                        {tag}
-                        <button type="button" onClick={() => removeTag(tag)} className="ml-2 text-cyan-400/60 hover:text-white transition-colors">
-                            <CloseIcon className="w-3.5 h-3.5" />
-                        </button>
-                    </span>
-                ))}
-                <input
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={placeholder}
-                    className="flex-grow bg-transparent text-gray-200 placeholder-gray-500 focus:outline-none min-w-[150px] py-1 px-2 text-sm"
-                />
-            </div>
-            {helperText && <p className="mt-2 text-xs text-gray-500 italic px-1">{helperText}</p>}
-        </div>
-    );
+const INDUSTRY_TITLES: Record<string, string[]> = {
+    'IT': [
+        'Frontend Engineer', 'Backend Developer', 'Full Stack Developer', 'DevOps Engineer',
+        'UI/UX Designer', 'Mobile App Developer', 'Cloud Architect', 'Data Scientist',
+        'Product Manager', 'Quality Assurance Engineer', 'Software Engineer', 'Technical Lead'
+    ],
+    'Healthcare': [
+        'Registered Nurse (RN)', 'Nurse Practitioner (NP)', 'Physician Assistant (PA)',
+        'Medical Assistant (MA)', 'Physical Therapist (PT)', 'Surgical Technologist',
+        'Radiologic Technologist', 'Dental Hygienist', 'Pharmacist', 'Healthcare Administrator',
+        'LPN (Licensed Practical Nurse)', 'LNA (Licensed Nursing Assistant)',
+        'CNA (Certified Nursing Assistant)', 'Home Health Aide', 'Patient Care Technician'
+    ]
 };
-
 
 const PhotoUploadForm: React.FC<{ onUpload: (file: File) => void, onClose: () => void }> = ({ onUpload, onClose }) => {
     const [file, setFile] = useState<File | null>(null);
@@ -109,245 +66,458 @@ const PhotoUploadForm: React.FC<{ onUpload: (file: File) => void, onClose: () =>
                 setFile(droppedFile);
                 if (preview) URL.revokeObjectURL(preview);
                 setPreview(URL.createObjectURL(droppedFile));
-            } else {
-                alert("Please drop an image file.");
             }
         }
     }
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!file) {
-            alert("Please select a file.");
-            return;
-        }
-        onUpload(file);
+        if (file) onUpload(file);
     }
 
-    const dragDropClasses = isDragging ? 'border-cyan-500 bg-gray-800' : 'border-gray-600';
-
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
             {preview ? (
-                <div className="flex justify-center">
-                    <img src={preview} alt="Preview" className="w-40 h-40 rounded-full object-cover border-4 border-gray-600" />
+                <div className="flex justify-center animate-step-in">
+                    <img src={preview} alt="Preview" className="w-48 h-48 rounded-full object-cover border-4 border-emerald-500 shadow-2xl" />
                 </div>
             ) : (
                 <div
-                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-300 ${dragDropClasses}`}
+                    className={`border-2 border-dashed rounded-3xl p-12 text-center transition-all duration-300 ${isDragging ? 'border-emerald-500 bg-emerald-50' : 'border-zinc-200 bg-zinc-50'}`}
                     onDragEnter={(e) => handleDragEvents(e, true)}
                     onDragLeave={(e) => handleDragEvents(e, false)}
                     onDragOver={(e) => handleDragEvents(e, true)}
                     onDrop={handleDrop}
                 >
-                    <UploadIcon className="w-12 h-12 mx-auto text-gray-500" />
-                    <label htmlFor="photo-upload" className="mt-2 block text-sm font-medium text-gray-400 cursor-pointer">
-                        Drag & drop your photo here, or <span className="text-cyan-400 font-semibold">browse</span>
-                    </label>
-                    <input id="photo-upload" name="photo-upload" type="file" accept="image/*" className="sr-only" onChange={handleFileChange} />
+                    <UploadIcon className="w-16 h-16 mx-auto text-zinc-300 mb-4" />
+                    <p className="text-zinc-600">Drag & drop your photo, or <label htmlFor="photo-upload" className="text-emerald-600 font-bold cursor-pointer hover:underline">browse</label></p>
+                    <input id="photo-upload" type="file" accept="image/*" className="sr-only" onChange={handleFileChange} />
                 </div>
             )}
-            <div className="flex justify-end space-x-3 pt-2">
-                <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                <Button type="submit" variant="primary" disabled={!file}>Save Photo</Button>
+            <div className="flex justify-center gap-4">
+                <Button type="button" variant="secondary" onClick={onClose} className="rounded-2xl px-8">Maybe later</Button>
+                <Button type="submit" variant="primary" disabled={!file} className="rounded-2xl px-12 shadow-lg shadow-emerald-500/20">Save Photo</Button>
             </div>
         </form>
     )
 }
 
+const TagInput: React.FC<{ label: string; tags: string[]; setTags: (tags: string[]) => void; placeholder: string; suggestions?: string[] }> = ({ label, tags, setTags, placeholder, suggestions = [] }) => {
+    const [inputValue, setInputValue] = useState('');
+    const filteredSuggestions = suggestions.filter(s => s.toLowerCase().includes(inputValue.toLowerCase()) && !tags.includes(s)).slice(0, 5);
+    const recommendations = suggestions.filter(s => !tags.includes(s)).slice(0, 8);
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            const newTag = inputValue.trim();
+            if (newTag && !tags.includes(newTag)) setTags([...tags, newTag]);
+            setInputValue('');
+        }
+    };
+
+    const removeTag = (tagToRemove: string) => setTags(tags.filter(tag => tag !== tagToRemove));
+
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-wrap gap-2 mb-2">
+                {tags.map(tag => (
+                    <span key={tag} className="flex items-center bg-emerald-50 text-emerald-600 text-sm font-bold px-4 py-2 rounded-2xl border border-emerald-100 shadow-sm animate-step-in">
+                        {tag}
+                        <button type="button" onClick={() => removeTag(tag)} className="ml-2 hover:text-emerald-900"><CloseIcon className="w-4 h-4" /></button>
+                    </span>
+                ))}
+            </div>
+
+            {recommendations.length > 0 && (
+                <div className="space-y-3">
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Recommended for you</p>
+                    <div className="flex flex-wrap gap-2">
+                        {recommendations.map(req => (
+                            <button
+                                key={req}
+                                onClick={() => setTags([...tags, req])}
+                                className="px-4 py-2 rounded-2xl border border-zinc-100 bg-zinc-50/50 text-zinc-600 text-sm font-medium hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 transition-all active:scale-95"
+                            >
+                                + {req}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <div className="relative pt-4">
+                <input
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={placeholder}
+                    className="w-full text-2xl font-medium bg-transparent border-b-2 border-zinc-200 focus:border-emerald-500 focus:outline-none py-4 transition-all"
+                    autoFocus
+                />
+                {inputValue && filteredSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-4 bg-white border border-zinc-100 rounded-3xl shadow-2xl z-50 overflow-hidden animate-prompt-in">
+                        {filteredSuggestions.map((suggestion) => (
+                            <button key={suggestion} onClick={() => { setTags([...tags, suggestion]); setInputValue(''); }} className="w-full text-left px-6 py-4 hover:bg-emerald-50 hover:text-emerald-600 transition-colors border-b border-zinc-50 last:border-0 font-medium">
+                                {suggestion}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 const OnboardingPage: React.FC = () => {
-    const { profile, updateProfile, isProfileCreated, loading: profileLoading } = useProfile();
+    const { profile, updateProfile, logout, isProfileCreated, loading: profileLoading } = useProfile();
     const navigate = useNavigate();
-    const [step, setStep] = useState(1);
+    const [currentStep, setCurrentStep] = useState(0);
     const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const lastPushedDataRef = useRef<string>('');
 
     const [formData, setFormData] = useState<Partial<UserProfile>>({
-        photo_url: '', name: '', title: '', industry: '', experience: '', location: '',
-        bio: '', skills: [], roles: [], certifications: [], portfolio_url: ''
+        photo_url: '', name: '', title: '', industry: '', experience: '', location: '', bio: '', skills: []
     });
 
     useEffect(() => {
-        // Redirect recruiters away from the onboarding page as it's not for them.
-        if (!profileLoading && profile && profile.role === 'recruiter') {
-            navigate('/candidates');
-        }
+        if (!profileLoading && profile && profile.role === 'recruiter') navigate('/candidates');
     }, [profile, profileLoading, navigate]);
 
     useEffect(() => {
-        if (profile) setFormData(profile);
+        if (profile) {
+            setFormData(profile);
+            lastPushedDataRef.current = JSON.stringify(profile);
+        }
     }, [profile]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    useEffect(() => {
+        const currentDataStr = JSON.stringify(formData);
+        if (!profile || currentDataStr === lastPushedDataRef.current) return;
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        setSaveStatus('saving');
+        saveTimerRef.current = setTimeout(async () => {
+            try {
+                await updateProfile(formData);
+                lastPushedDataRef.current = currentDataStr;
+                setSaveStatus('saved');
+            } catch (err) {
+                setSaveStatus('error');
+            }
+        }, 1500);
+        return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+    }, [formData, updateProfile, profile]);
+
+    const handleLogout = async () => {
+        if (isLoggingOut) return;
+        setIsLoggingOut(true);
+        try {
+            await logout();
+        } catch (err) {
+            console.error("Logout from onboarding failed:", err);
+        } finally {
+            setIsLoggingOut(false);
+        }
+    };
+
+    const handleChange = (e: any) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleTagsChange = (name: keyof UserProfile) => (tags: string[]) => {
-        setFormData(prev => ({ ...prev, [name]: tags }));
-    };
-
     const handlePhotoUpload = async (file: File) => {
-        if (!supabase) {
-            alert("Photo uploads are disabled: Supabase is not configured.");
-            setIsPhotoModalOpen(false);
-            return;
-        }
-
-        if (!profile?.id) {
-            alert("You must be logged in to upload a photo.");
-            return;
-        }
-
+        if (!supabase || !profile?.id) return;
         const fileExt = file.name.split('.').pop();
         const filePath = `${profile.id}/profile.${fileExt}`;
-
         try {
-            const { error: uploadError } = await supabase.storage
-                .from('avatars')
-                .upload(filePath, file, { upsert: true });
-
-            if (uploadError) throw uploadError;
-
-            const { data } = supabase.storage
-                .from('avatars')
-                .getPublicUrl(filePath);
-
+            await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
+            const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
             const newPhotoUrl = `${data.publicUrl}?t=${new Date().getTime()}`;
-
             await updateProfile({ photo_url: newPhotoUrl });
-
-        } catch (error) {
-            console.error("Error uploading photo:", error);
-            alert("Failed to upload photo.");
-        } finally {
+            setFormData(prev => ({ ...prev, photo_url: newPhotoUrl }));
             setIsPhotoModalOpen(false);
-        }
-    };
-
-    const nextStep = () => setStep(s => Math.min(s + 1, 3));
-    const prevStep = () => setStep(s => Math.max(s - 1, 1));
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSaving(true);
-        try {
-            await updateProfile(formData);
-            navigate('/profile/me');
+            setCurrentStep(s => s + 1);
         } catch (error) {
-            console.error("Failed to update profile:", error);
-            alert("There was an error saving your profile. Please try again.");
-        } finally {
-            setIsSaving(false);
+            alert("Upload failed.");
         }
     };
 
-    // Show a loading spinner while checking the user's role to prevent content flashing.
-    if (profileLoading || (profile && profile.role === 'recruiter')) {
-        return (
-            <div className="flex justify-center items-center h-[calc(100vh-80px)]">
-                <LoaderIcon className="w-8 h-8" />
-            </div>
-        );
-    }
+    const steps = [
+        {
+            id: 'photo',
+            prompt: "Welcome! Let's build your professional story together. Mind if we start with a photo?",
+            content: (
+                <div className="flex justify-center">
+                    <div className="relative group cursor-pointer" onClick={() => setIsPhotoModalOpen(true)}>
+                        {formData.photo_url ? (
+                            <img src={formData.photo_url} alt="Profile" className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-2xl transition-transform hover:scale-105" />
+                        ) : (
+                            <div className="w-48 h-48 rounded-full bg-zinc-100 flex items-center justify-center border-4 border-white shadow-2xl group-hover:bg-emerald-50 transition-colors">
+                                <CameraIcon className="w-16 h-16 text-zinc-300 group-hover:text-emerald-500 transition-colors" />
+                            </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-white font-bold">Update Photo</span>
+                        </div>
+                    </div>
+                </div>
+            ),
+            isOptional: true
+        },
+        {
+            id: 'industry',
+            prompt: "First, which industry is your expertise in?",
+            content: (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                    {['IT', 'Healthcare'].map(industry => (
+                        <button
+                            key={industry}
+                            onClick={() => {
+                                setFormData(prev => ({ ...prev, industry }));
+                                setCurrentStep(s => s + 1);
+                            }}
+                            className={`p-12 rounded-3xl border-2 transition-all text-2xl font-bold ${formData.industry === industry ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-lg shadow-emerald-500/10' : 'border-zinc-100 hover:border-emerald-200 hover:bg-zinc-50'}`}
+                        >
+                            {industry === 'IT' ? 'Information Technology' : industry}
+                        </button>
+                    ))}
+                </div>
+            ),
+            isValid: !!formData.industry
+        },
+        {
+            id: 'name',
+            prompt: "Great choice! And who are we talking to? What's your full name?",
+            content: (
+                <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Type your name..."
+                    className="w-full text-4xl font-bold bg-transparent border-b-4 border-zinc-100 focus:border-emerald-500 focus:outline-none py-4 transition-all"
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && formData.name && setCurrentStep(s => s + 1)}
+                />
+            ),
+            isValid: !!formData.name
+        },
+        {
+            id: 'title',
+            prompt: `Nice to meet you, ${formData.name?.split(' ')[0]}. What's your current job title?`,
+            content: (
+                <div className="relative group">
+                    <input
+                        type="text"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleChange}
+                        placeholder="e.g. Senior Frontend Engineer"
+                        className="w-full text-4xl font-bold bg-transparent border-b-4 border-zinc-100 focus:border-emerald-500 focus:outline-none py-4 transition-all"
+                        autoFocus
+                        onKeyDown={(e) => e.key === 'Enter' && formData.title && setCurrentStep(s => s + 1)}
+                    />
+                    {formData.title && (
+                        <div className="absolute top-full left-0 mt-4 text-zinc-400 font-medium group-focus-within:opacity-0 transition-opacity">Press Enter to continue</div>
+                    )}
+                    {(!formData.title || formData.title.length > 0) && (
+                        <div className="flex flex-wrap gap-2 mt-6">
+                            {(INDUSTRY_TITLES[formData.industry || 'IT'] || []).filter(t => t.toLowerCase().includes(formData.title?.toLowerCase() || '')).slice(0, 5).map(suggestedTitle => (
+                                <button
+                                    key={suggestedTitle}
+                                    onClick={() => {
+                                        setFormData(prev => ({ ...prev, title: suggestedTitle }));
+                                        // Slight delay for visual feedback before advancing
+                                        setTimeout(() => setCurrentStep(s => s + 1), 200);
+                                    }}
+                                    className="px-4 py-2 rounded-2xl border border-zinc-100 bg-zinc-50/50 text-zinc-600 text-sm font-medium hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 transition-all"
+                                >
+                                    + {suggestedTitle}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            ),
+            isValid: !!formData.title
+        },
+        {
+            id: 'location',
+            prompt: "Where are you based? Recruiters love to know your local market.",
+            content: (
+                <LocationAutocompleteInput
+                    label=""
+                    name="location"
+                    value={formData.location || ''}
+                    onChange={handleChange}
+                    placeholder="City, State..."
+                    className="w-full text-4xl font-extrabold bg-transparent border-b-4 border-zinc-100 focus:border-emerald-500 focus:outline-none py-4 transition-all"
+                    onKeyDown={(e) => e.key === 'Enter' && formData.location && setCurrentStep(s => s + 1)}
+                />
+            ),
+            isValid: !!formData.location
+        },
+        {
+            id: 'experience',
+            prompt: "How many years of experience do you have in this field?",
+            content: (
+                <div className="space-y-8">
+                    <div className="flex items-center gap-6">
+                        <input
+                            type="number"
+                            name="experience"
+                            value={formData.experience}
+                            onChange={handleChange}
+                            placeholder="0"
+                            className="w-32 text-6xl font-bold bg-transparent border-b-4 border-zinc-100 focus:border-emerald-500 focus:outline-none py-2 text-center"
+                            autoFocus
+                            onKeyDown={(e) => e.key === 'Enter' && formData.experience && setCurrentStep(s => s + 1)}
+                        />
+                        <span className="text-4xl font-bold text-zinc-300 select-none">years</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-4">
+                        {['0', '1', '2', '3', '5', '8', '10', '15'].map(exp => (
+                            <button
+                                key={exp}
+                                onClick={() => {
+                                    setFormData(prev => ({ ...prev, experience: exp }));
+                                    setTimeout(() => setCurrentStep(s => s + 1), 300);
+                                }}
+                                className="px-6 py-3 rounded-2xl border border-zinc-100 bg-white text-zinc-600 font-bold hover:border-emerald-300 hover:text-emerald-600 transition-all active:scale-95 shadow-sm"
+                            >
+                                {exp === '0' ? 'Entry Level' : (exp === '15' ? '15+ Years' : `${exp} Years`)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            ),
+            isValid: !!formData.experience
+        },
+        {
+            id: 'skills',
+            prompt: "What are your core skills? Add at least three to stand out.",
+            content: (
+                <TagInput
+                    label=""
+                    tags={formData.skills || []}
+                    setTags={(tags) => setFormData(prev => ({ ...prev, skills: tags }))}
+                    placeholder="Add a skill..."
+                    suggestions={INDUSTRY_SKILLS[formData.industry || 'IT'] || []}
+                />
+            ),
+            isValid: (formData.skills || []).length >= 1
+        },
+        {
+            id: 'bio',
+            prompt: "Final touch: how would you describe your professional journey in a few sentences?",
+            content: (
+                <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleChange}
+                    placeholder="I am a passionate professional with a focus on..."
+                    className="w-full text-2xl font-medium bg-transparent border-b-4 border-zinc-100 focus:border-emerald-500 focus:outline-none py-4 min-h-[200px] resize-none"
+                    autoFocus
+                />
+            ),
+            isOptional: true
+        }
+    ];
+
+    if (profileLoading) return <div className="flex justify-center items-center h-screen"><LoaderIcon className="w-12 h-12 text-emerald-500 animate-spin" /></div>;
+
+    const currentStepData = steps[currentStep];
 
     return (
-        <>
-            <div className="container mx-auto px-6 py-12 max-w-3xl animate-fade-in-up">
-                <header className="text-center mb-10">
-                    <h1 className="text-4xl font-bold text-white">
-                        {isProfileCreated ? 'Edit Your Profile' : 'Create Your Profile'}
-                    </h1>
-                    <p className="text-xl text-gray-300 mt-2">
-                        Step {step} of 3: {step === 1 ? "The Basics" : step === 2 ? "Your Story" : "Your Expertise"}
-                    </p>
-                    <ProgressBar step={step} />
-                </header>
+        <div className="min-h-screen bg-white">
+            {/* Header: Progress & Save Status */}
+            <div className="fixed top-0 left-0 right-0 p-8 flex justify-between items-center z-50 bg-gradient-to-b from-white via-white/80 to-transparent">
+                <div className="flex items-center gap-6">
+                    <div className="flex gap-2">
+                        {steps.map((_, idx) => (
+                            <div key={idx} className={`h-1.5 rounded-full onboarding-progress-pill ${idx <= currentStep ? 'w-8 bg-emerald-500' : 'w-4 bg-zinc-100'}`} />
+                        ))}
+                    </div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest transition-all">
+                        {saveStatus === 'saving' && <span className="text-emerald-500 animate-pulse">Syncing...</span>}
+                        {saveStatus === 'saved' && <span className="text-zinc-400 opacity-60">Everything saved</span>}
+                    </div>
+                </div>
 
-                <Card>
-                    <form onSubmit={handleSubmit}>
-                        <div className="space-y-6">
-                            {step === 1 && (
-                                <>
-                                    <div className="flex flex-col items-center sm:items-start sm:flex-row gap-6">
-                                        <div className="flex-shrink-0">
-                                            <label className="block text-sm font-medium text-gray-300 mb-2 text-center sm:text-left">Profile Photo</label>
-                                            <div className="relative group">
-                                                {formData.photo_url ? (
-                                                    <img src={formData.photo_url} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-gray-600" />
-                                                ) : (
-                                                    <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center border-4 border-gray-600">
-                                                        <UserIcon className="w-12 h-12 text-gray-500" />
-                                                    </div>
-                                                )}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsPhotoModalOpen(true)}
-                                                    className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                                                >
-                                                    <CameraIcon className="w-8 h-8 text-white" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="w-full space-y-6 flex-grow">
-                                            <Input label="Full Name" name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Alex Doe" required icon={<UserIcon />} />
-                                            <Input label="Job Title / Headline" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Senior Frontend Engineer" required icon={<BriefcaseIcon />} />
-                                        </div>
-                                    </div>
-                                    <Select label="Your Industry" name="industry" value={formData.industry} onChange={handleChange} required icon={<BuildingOfficeIcon />}>
-                                        <option value="" disabled>Select an industry</option>
-                                        <option value="IT">Information Technology</option>
-                                        <option value="Healthcare">Healthcare</option>
-                                        <option value="Other">Other</option>
-                                    </Select>
-                                </>
-                            )}
-                            {step === 2 && (
-                                <>
-                                    <Input label="Years of Experience" name="experience" type="number" value={formData.experience} onChange={handleChange} placeholder="e.g. 8" required icon={<CalendarDaysIcon />} />
-                                    <LocationAutocompleteInput
-                                        label="Location"
-                                        name="location"
-                                        value={formData.location || ''}
-                                        onChange={handleChange}
-                                        placeholder="e.g. Remote, USA"
-                                        required
-                                        icon={<MapPinIcon />}
-                                    />
-                                    <Textarea label="Bio" name="bio" value={formData.bio} onChange={handleChange} placeholder="Tell recruiters a little about yourself, your goals, and what you're passionate about." required />
-                                </>
-                            )}
-                            {step === 3 && (
-                                <>
-                                    <TagInput label="Top Skills" tags={formData.skills || []} setTags={handleTagsChange('skills')} placeholder="Add a skill and press Enter" icon={<TagIcon />} helperText="e.g., React, TypeScript, Surgical Procedures" />
-                                    <TagInput label="Target Roles" tags={formData.roles || []} setTags={handleTagsChange('roles')} placeholder="Add a role and press Enter" icon={<BriefcaseIcon />} helperText="e.g., Frontend Developer, Registered Nurse" />
-                                    <TagInput label="Certifications & Licenses" tags={formData.certifications || []} setTags={handleTagsChange('certifications')} placeholder="Add a certification and press Enter" icon={<AcademicCapIcon />} helperText="e.g., AWS Certified Developer, RN License" />
-                                    <Input label="Portfolio or Website URL" name="portfolio_url" value={formData.portfolio_url} onChange={handleChange} placeholder="https://github.com/your-profile" icon={<LinkIcon />} />
-                                </>
-                            )}
-                        </div>
-                        <div className="flex justify-between items-center pt-8 mt-6 border-t border-gray-700">
-                            <Button type="button" variant="secondary" onClick={prevStep} disabled={step === 1} className={step === 1 ? 'opacity-0 invisible' : ''}>
-                                Back
-                            </Button>
-                            {step < 3 && (
-                                <Button type="button" variant="primary" onClick={nextStep}>
-                                    Next
-                                </Button>
-                            )}
-                            {step === 3 && (
-                                <Button type="submit" variant="primary" disabled={isSaving}>
-                                    {isSaving ? 'Saving...' : (isProfileCreated ? 'Save Changes' : 'Create Profile')}
-                                </Button>
-                            )}
-                        </div>
-                    </form>
-                </Card>
+                <button
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="flex items-center gap-2 text-sm font-medium text-zinc-400 hover:text-zinc-900 transition-colors disabled:opacity-50"
+                >
+                    <span className="hidden sm:inline">{isLoggingOut ? 'Signing out...' : 'Log Out'}</span>
+                    <LogOutIcon className="w-5 h-5" />
+                </button>
             </div>
-            <Modal isOpen={isPhotoModalOpen} onClose={() => setIsPhotoModalOpen(false)} title="Upload Profile Photo">
+
+            {/* Main Stage */}
+            <main className="container mx-auto px-6 pt-32 pb-48 max-w-4xl">
+                <div key={currentStep} className="space-y-12 animate-step-in">
+                    <h2 className="text-5xl md:text-6xl font-extrabold text-zinc-900 leading-tight tracking-tight animate-prompt-in">
+                        {currentStepData.prompt}
+                    </h2>
+
+                    <div className="pt-4">
+                        {currentStepData.content}
+                    </div>
+                </div>
+            </main>
+
+            {/* Navigation Bar */}
+            <div className="fixed bottom-0 left-0 right-0 p-8 md:p-12 flex justify-between items-center bg-gradient-to-t from-white via-white/90 to-transparent pt-24">
+                <Button
+                    variant="secondary"
+                    onClick={() => setCurrentStep(s => Math.max(0, s - 1))}
+                    disabled={currentStep === 0}
+                    className={`rounded-2xl px-8 py-4 ${currentStep === 0 ? 'opacity-0' : ''}`}
+                >
+                    Back
+                </Button>
+
+                <div className="flex gap-4">
+                    {currentStepData.isOptional && (
+                        <Button
+                            variant="secondary"
+                            onClick={() => setCurrentStep(s => s + 1)}
+                            className="rounded-2xl px-8 py-4"
+                        >
+                            Skip for now
+                        </Button>
+                    )}
+                    {currentStep < steps.length - 1 ? (
+                        <Button
+                            variant="primary"
+                            onClick={() => setCurrentStep(s => s + 1)}
+                            disabled={!currentStepData.isValid && !currentStepData.isOptional}
+                            className="rounded-2xl px-12 py-4 shadow-xl shadow-emerald-500/20 text-lg"
+                        >
+                            Continue
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="primary"
+                            onClick={() => navigate('/profile/me')}
+                            className="rounded-2xl px-12 py-4 shadow-xl shadow-emerald-500/20 text-lg"
+                        >
+                            Complete My Profile
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            <Modal isOpen={isPhotoModalOpen} onClose={() => setIsPhotoModalOpen(false)} title="Add a face to the name">
                 <PhotoUploadForm onUpload={handlePhotoUpload} onClose={() => setIsPhotoModalOpen(false)} />
             </Modal>
-        </>
+        </div>
     );
 };
 

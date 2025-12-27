@@ -31,6 +31,8 @@ const DocumentsPage: React.FC = () => {
   const [editingDocId, setEditingDocId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState('');
   const [rowBusyId, setRowBusyId] = useState<number | null>(null);
+  const [docToDelete, setDocToDelete] = useState<DocumentFile | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const isRecruiter = profile?.role === 'recruiter';
 
@@ -166,12 +168,22 @@ const DocumentsPage: React.FC = () => {
     a.remove();
   };
 
-  const handleDelete = async (doc: DocumentFile) => {
-    const ok = window.confirm(`Delete "${doc.name}"? This cannot be undone.`);
-    if (!ok) return;
-    setRowBusyId(doc.id);
+  const handleDelete = (doc: DocumentFile) => {
+    setDocToDelete(doc);
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!docToDelete) return;
+
+    setRowBusyId(docToDelete.id);
     try {
-      await deleteDocument(doc.id);
+      await deleteDocument(docToDelete.id);
+      setIsDeleteModalOpen(false);
+      setDocToDelete(null);
+    } catch (err: any) {
+      console.error('Delete error:', err);
+      alert(err?.message || 'Failed to delete document. Please try again.');
     } finally {
       setRowBusyId(null);
     }
@@ -187,13 +199,19 @@ const DocumentsPage: React.FC = () => {
     setEditingName('');
   };
 
-  const saveRename = async (doc: DocumentFile) => {
-    const next = editingName.trim();
-    if (!next) return;
+  const saveRename = async (doc: DocumentFile, forcedName?: string) => {
+    const next = (forcedName !== undefined ? forcedName : editingName).trim();
+    if (!next || next === doc.name) {
+      cancelRename();
+      return;
+    }
     setRowBusyId(doc.id);
     try {
       await updateDocument(doc.id, { name: next });
       cancelRename();
+    } catch (err: any) {
+      console.error('Rename failed:', err);
+      // Stay in editing mode so they can fix it
     } finally {
       setRowBusyId(null);
     }
@@ -252,22 +270,22 @@ const DocumentsPage: React.FC = () => {
     <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-5xl animate-fade-in-up">
       <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
         <div className="space-y-4">
-          <div className="inline-flex items-center px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase tracking-[0.2em]">
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-bold uppercase tracking-[0.2em]">
             Management
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">Documents</h1>
-          <p className="text-lg text-gray-400 max-w-2xl font-light">
+          <h1 className="text-4xl md:text-5xl font-bold text-zinc-900 tracking-tight">Documents</h1>
+          <p className="text-lg text-zinc-600 max-w-2xl font-light">
             Securely manage your resumes, certifications, and portfolios.
-            Toggle visibility to share specific files on your <span className="text-cyan-400/80 font-medium">public portfolio</span>.
+            Toggle visibility to share specific files on your <span className="text-emerald-600 font-medium">public portfolio</span>.
           </p>
           <div className="flex items-center space-x-4 pt-2">
-            <div className="text-[10px] text-gray-600 font-mono tracking-tighter bg-white/5 px-2 py-0.5 rounded border border-white/5">
+            <div className="text-[10px] text-zinc-400 font-mono tracking-tighter bg-zinc-50 px-2 py-0.5 rounded border border-zinc-100">
               BUILD: {__BUILD_ID__.substring(0, 8)}
             </div>
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <Button onClick={openUpload} variant="primary" className="shadow-[0_0_20px_-5px_rgba(34,211,238,0.3)]">
+          <Button onClick={openUpload} variant="primary" className="shadow-[0_0_20px_-5px_rgba(16,185,129,0.3)]">
             <UploadIcon className="w-5 h-5 mr-3" />
             Upload Document
           </Button>
@@ -283,7 +301,7 @@ const DocumentsPage: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by file name"
           />
-          <div className="text-sm text-gray-400 sm:text-right">
+          <div className="text-sm text-zinc-500 sm:text-right">
             {documentsLoading ? 'Loading…' : `${filteredDocuments.length} document${filteredDocuments.length === 1 ? '' : 's'}`}
           </div>
         </div>
@@ -307,12 +325,12 @@ const DocumentsPage: React.FC = () => {
           <LoaderIcon className="w-10 h-10" />
         </div>
       ) : filteredDocuments.length === 0 ? (
-        <Card className="p-10 text-center">
+        <Card className="p-10 text-center border-zinc-200">
           <div className="flex justify-center mb-4">
-            <DocumentIcon className="w-14 h-14 text-cyan-400" />
+            <DocumentIcon className="w-14 h-14 text-emerald-500" />
           </div>
-          <h2 className="text-xl font-semibold text-white">No documents yet</h2>
-          <p className="mt-2 text-gray-400">Upload your resume or certifications to share quickly.</p>
+          <h2 className="text-xl font-semibold text-zinc-900">No documents yet</h2>
+          <p className="mt-2 text-zinc-600">Upload your resume or certifications to share quickly.</p>
           <div className="mt-6">
             <Button onClick={openUpload} variant="primary">
               <UploadIcon className="w-5 h-5 mr-2" />
@@ -333,13 +351,13 @@ const DocumentsPage: React.FC = () => {
                   <div className="min-w-0 flex-1">
                     {!isEditing ? (
                       <div className="flex items-start gap-3">
-                        <DocumentIcon className="w-6 h-6 text-cyan-400 flex-shrink-0 mt-0.5" />
+                        <DocumentIcon className="w-6 h-6 text-emerald-500 flex-shrink-0 mt-0.5" />
                         <div className="min-w-0">
-                          <p className="text-white font-semibold truncate">{doc.name}</p>
-                          <div className="text-xs text-gray-400 mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                          <p className="text-zinc-900 font-semibold truncate">{doc.name}</p>
+                          <div className="text-xs text-zinc-500 mt-1 flex flex-wrap gap-x-4 gap-y-1">
                             <span>{doc.size}</span>
                             <span>{new Date(doc.created_at).toLocaleString()}</span>
-                            <span className={isPublic ? 'text-cyan-300' : 'text-gray-400'}>
+                            <span className={isPublic ? 'text-emerald-600 font-bold' : 'text-zinc-400'}>
                               {isPublic ? 'Public' : 'Private'}
                             </span>
                           </div>
@@ -347,43 +365,40 @@ const DocumentsPage: React.FC = () => {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <Input
-                          label="Document name"
-                          name={`rename_${doc.id}`}
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          disabled={isRowBusy}
-                        />
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          <Button
-                            onClick={() => saveRename(doc)}
-                            variant="primary"
-                            disabled={!editingName.trim()}
-                            loading={isRowBusy}
-                            className="w-full sm:w-auto"
-                          >
-                            Save
-                          </Button>
-                          <Button
-                            onClick={cancelRename}
-                            variant="secondary"
+                        <div className="relative">
+                          <Input
+                            label="Document name"
+                            name={`rename_${doc.id}`}
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onBlur={() => saveRename(doc)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveRename(doc);
+                              if (e.key === 'Escape') cancelRename();
+                            }}
                             disabled={isRowBusy}
-                            className="w-full sm:w-auto"
-                          >
-                            Cancel
-                          </Button>
+                            autoFocus
+                          />
+                          {isRowBusy && (
+                            <div className="absolute right-4 bottom-3">
+                              <LoaderIcon className="w-4 h-4 animate-spin text-emerald-500" />
+                            </div>
+                          )}
                         </div>
+                        <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider px-1">
+                          Press Enter to save • ESC to cancel
+                        </p>
                       </div>
                     )}
                   </div>
 
                   {/* Actions Column */}
                   {!isEditing && (
-                    <div className="flex flex-col sm:items-end gap-6 sm:gap-4 w-full sm:w-auto border-t sm:border-t-0 border-white/[0.05] pt-4 sm:pt-0">
+                    <div className="flex flex-col sm:items-end gap-6 sm:gap-4 w-full sm:w-auto border-t sm:border-t-0 border-zinc-100 pt-4 sm:pt-0">
                       <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
-                        <span className="text-sm font-medium text-gray-400 uppercase tracking-widest text-[10px]">Visibility</span>
+                        <span className="text-sm font-medium text-zinc-500 uppercase tracking-widest text-[10px]">Visibility</span>
                         <div className="flex items-center gap-3">
-                          <span className={`text-[10px] uppercase font-bold tracking-tighter ${isPublic ? 'text-cyan-400' : 'text-gray-500'}`}>
+                          <span className={`text-[10px] uppercase font-bold tracking-tighter ${isPublic ? 'text-emerald-600' : 'text-zinc-400'}`}>
                             {isPublic ? 'Public' : 'Private'}
                           </span>
                           <ToggleSwitch
@@ -399,7 +414,7 @@ const DocumentsPage: React.FC = () => {
                           type="button"
                           onClick={() => handleView(doc)}
                           disabled={isRowBusy}
-                          className="flex items-center justify-center aspect-square sm:aspect-auto sm:px-4 sm:py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/[0.05] transition-all active:scale-90"
+                          className="flex items-center justify-center aspect-square sm:aspect-auto sm:px-4 sm:py-2.5 rounded-2xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 border border-zinc-200 transition-all active:scale-90"
                           title="View"
                         >
                           <EyeIcon className="w-5 h-5" />
@@ -408,7 +423,7 @@ const DocumentsPage: React.FC = () => {
                           type="button"
                           onClick={() => handleDownload(doc)}
                           disabled={isRowBusy}
-                          className="flex items-center justify-center aspect-square sm:aspect-auto sm:px-4 sm:py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/[0.05] transition-all active:scale-90"
+                          className="flex items-center justify-center aspect-square sm:aspect-auto sm:px-4 sm:py-2.5 rounded-2xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 border border-zinc-200 transition-all active:scale-90"
                           title="Download"
                         >
                           <DownloadIcon className="w-5 h-5" />
@@ -417,7 +432,7 @@ const DocumentsPage: React.FC = () => {
                           type="button"
                           onClick={() => startRename(doc)}
                           disabled={isRowBusy}
-                          className="flex items-center justify-center aspect-square sm:aspect-auto sm:px-4 sm:py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/[0.05] transition-all active:scale-90"
+                          className="flex items-center justify-center aspect-square sm:aspect-auto sm:px-4 sm:py-2.5 rounded-2xl bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 border border-zinc-200 transition-all active:scale-90"
                           title="Rename"
                         >
                           <PencilIcon className="w-5 h-5" />
@@ -426,7 +441,7 @@ const DocumentsPage: React.FC = () => {
                           type="button"
                           onClick={() => handleDelete(doc)}
                           disabled={isRowBusy}
-                          className="flex items-center justify-center aspect-square sm:aspect-auto sm:px-4 sm:py-2.5 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/10 transition-all active:scale-90"
+                          className="flex items-center justify-center aspect-square sm:aspect-auto sm:px-4 sm:py-2.5 rounded-2xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 transition-all active:scale-90"
                           title="Delete"
                         >
                           <TrashIcon className="w-5 h-5" />
@@ -444,20 +459,20 @@ const DocumentsPage: React.FC = () => {
       <Modal isOpen={isUploadOpen} onClose={closeUpload} title="Upload Document">
         <form onSubmit={handleUploadSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">File</label>
-            <div className="rounded-lg border border-gray-700 bg-gray-900/30 p-4">
+            <label className="block text-sm font-medium text-zinc-700 mb-2">File</label>
+            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
               <input
                 type="file"
                 onChange={(e) => onPickFile(e.target.files?.[0] || null)}
                 disabled={false}
-                className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600"
+                className="block w-full text-sm text-zinc-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-white file:text-zinc-900 file:border file:border-zinc-200 hover:file:bg-zinc-50"
               />
               {uploadFile && (
-                <p className="mt-3 text-xs text-gray-400 break-all">
-                  Selected: <span className="text-gray-300">{uploadFile.name}</span>
+                <p className="mt-3 text-xs text-zinc-600 break-all">
+                  Selected: <span className="text-zinc-900 font-medium">{uploadFile.name}</span>
                 </p>
               )}
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-2 text-xs text-zinc-500">
                 Works on mobile and desktop. Max 15MB.
               </p>
             </div>
@@ -472,10 +487,10 @@ const DocumentsPage: React.FC = () => {
             disabled={uploadBusy}
           />
 
-          <div className="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-900/30 p-4">
+          <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 p-4">
             <div>
-              <p className="text-sm font-medium text-gray-200">Public</p>
-              <p className="text-xs text-gray-400 mt-0.5">Public docs appear on your public profile.</p>
+              <p className="text-sm font-medium text-zinc-900">Public</p>
+              <p className="text-xs text-zinc-600 mt-0.5">Public docs appear on your public profile.</p>
             </div>
             <ToggleSwitch
               id="upload_visibility"
@@ -495,6 +510,45 @@ const DocumentsPage: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Custom Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => !rowBusyId && setIsDeleteModalOpen(false)}
+        title="Delete Document"
+      >
+        <div className="space-y-6">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-6 border border-red-100">
+              <TrashIcon className="w-10 h-10 text-red-500" />
+            </div>
+            <h3 className="text-xl font-bold text-zinc-900">Are you absolutely sure?</h3>
+            <p className="mt-2 text-zinc-500 font-light">
+              You are about to permanently delete <span className="font-bold text-zinc-900">"{docToDelete?.name}"</span>.
+              This action cannot be undone.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <Button
+              onClick={() => setIsDeleteModalOpen(false)}
+              variant="secondary"
+              className="flex-1"
+              disabled={!!rowBusyId}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={executeDelete}
+              variant="primary"
+              className="flex-1 bg-red-600 from-red-500 to-red-700 hover:shadow-red-500/20"
+              loading={!!rowBusyId}
+            >
+              Delete Permanently
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

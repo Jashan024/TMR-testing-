@@ -17,14 +17,14 @@ const areCredentialsValid = supabaseUrl && supabaseAnonKey && supabaseUrl !== 'Y
 
 // Create a single Supabase client for interacting with the backend.
 // If credentials are not valid, the client will be null, and the app will use fallback data.
-const supabase: SupabaseClient | null = areCredentialsValid 
-    ? createClient(supabaseUrl, supabaseAnonKey, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-        },
-      }) 
-    : null;
+const supabase: SupabaseClient | null = areCredentialsValid
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  })
+  : null;
 
 export { supabase };

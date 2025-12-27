@@ -10,7 +10,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export const Input: React.FC<InputProps> = ({ label, name, type = 'text', helperText, icon, ...props }) => {
   return (
     <div>
-      <label htmlFor={name} className="block text-sm font-medium text-gray-300 mb-2">
+      <label htmlFor={name} className="block text-sm font-medium text-zinc-700 mb-2">
         {label}
       </label>
       <div className="relative">
@@ -24,7 +24,7 @@ export const Input: React.FC<InputProps> = ({ label, name, type = 'text', helper
           id={name}
           name={name}
           type={type}
-          className={`w-full py-3 bg-white/[0.03] border border-white/10 rounded-2xl text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 focus:bg-white/[0.05] transition-all duration-300 ${icon ? 'pl-11' : 'px-4'}`}
+          className={`w-full py-3 bg-white border border-zinc-200 rounded-2xl text-zinc-900 placeholder-zinc-400 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all duration-300 ${icon ? 'pl-11' : 'px-4'}`}
           {...props}
         />
       </div>
@@ -44,7 +44,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 export const Select: React.FC<SelectProps> = ({ label, name, helperText, icon, children, ...props }) => {
   return (
     <div>
-      <label htmlFor={name} className="block text-sm font-medium text-gray-300 mb-2">
+      <label htmlFor={name} className="block text-sm font-medium text-zinc-700 mb-2">
         {label}
       </label>
       <div className="relative">
@@ -57,7 +57,7 @@ export const Select: React.FC<SelectProps> = ({ label, name, helperText, icon, c
         <select
           id={name}
           name={name}
-          className={`w-full py-3 bg-white/[0.03] border border-white/10 rounded-2xl text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 focus:bg-white/[0.05] transition-all duration-300 appearance-none ${icon ? 'pl-11' : 'px-4'}`}
+          className={`w-full py-3 bg-white border border-zinc-200 rounded-2xl text-zinc-900 placeholder-zinc-400 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all duration-300 appearance-none ${icon ? 'pl-11' : 'px-4'}`}
           {...props}
         >
           {children}
@@ -81,13 +81,13 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 export const Textarea: React.FC<TextareaProps> = ({ label, name, helperText, ...props }) => {
   return (
     <div>
-      <label htmlFor={name} className="block text-sm font-medium text-gray-300 mb-2">
+      <label htmlFor={name} className="block text-sm font-medium text-zinc-700 mb-2">
         {label}
       </label>
       <textarea
         id={name}
         name={name}
-        className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-2xl text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 focus:bg-white/[0.05] transition-all duration-300"
+        className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-2xl text-zinc-900 placeholder-zinc-400 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all duration-300"
         rows={4}
         {...props}
       />

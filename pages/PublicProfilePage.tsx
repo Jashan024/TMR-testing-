@@ -10,10 +10,10 @@ import type { UserProfile, DocumentFile } from '../types';
 const LoadingSpinner: React.FC = () => (
   <div className="flex flex-col justify-center items-center h-[60vh] py-20">
     <div className="relative">
-      <div className="h-16 w-16 rounded-full border-t-2 border-b-2 border-cyan-400 animate-spin"></div>
-      <div className="absolute top-0 left-0 h-16 w-16 rounded-full border-l-2 border-r-2 border-blue-500 animate-spin-slow opacity-50"></div>
+      <div className="h-16 w-16 rounded-full border-t-2 border-b-2 border-emerald-400 animate-spin"></div>
+      <div className="absolute top-0 left-0 h-16 w-16 rounded-full border-l-2 border-r-2 border-emerald-600 animate-spin-slow opacity-50"></div>
     </div>
-    <p className="mt-6 text-cyan-400 font-medium tracking-widest animate-pulse">LOADING PROFILE</p>
+    <p className="mt-6 text-emerald-400 font-medium tracking-widest animate-pulse">LOADING PROFILE</p>
   </div>
 );
 
@@ -104,32 +104,32 @@ export const PublicProfilePage: React.FC = () => {
 
         if (error) throw error;
 
-        // Enhance documents with URLs.
-        // Prefer signed URLs (works with private buckets if policy allows reads),
-        // and fall back to public URLs if the bucket is public.
-        const enhancedDocs = await Promise.all(
-          (docRecords || []).map(async (doc) => {
-            let url: string | undefined;
-            try {
-              const { data: signed, error: signedError } = await supabase!.storage
-                .from('documents')
-                .createSignedUrl(doc.file_path, 60 * 10);
-              if (!signedError) url = signed?.signedUrl;
-            } catch (_) { }
+        // Step 1: Set documents immediately with no URLs yet to show the list fast
+        setPublicDocuments(docRecords || []);
+        setDocumentsLoading(false); // UI can show the list now
 
-            if (!url) {
-              const { data: urlData } = supabase!.storage.from('documents').getPublicUrl(doc.file_path);
-              url = urlData.publicUrl;
-            }
+        // Step 2: Resolve URLs in background to not block the initial list render.
+        // We do this by updating the state with the same records plus URLs as they resolve.
+        Promise.all((docRecords || []).map(async (doc) => {
+          let url: string | undefined;
+          try {
+            const { data: signed, error: signedError } = await supabase!.storage
+              .from('documents')
+              .createSignedUrl(doc.file_path, 60 * 10);
+            if (!signedError) url = signed?.signedUrl;
+          } catch (_) { }
 
-            return { ...doc, public_url: url };
-          })
-        );
+          if (!url) {
+            const { data: urlData } = supabase!.storage.from('documents').getPublicUrl(doc.file_path);
+            url = urlData.publicUrl;
+          }
+          return { ...doc, public_url: url };
+        })).then(enhancedDocs => {
+          setPublicDocuments(enhancedDocs);
+        });
 
-        setPublicDocuments(enhancedDocs);
       } catch (error) {
         console.error('Error fetching public documents:', error);
-      } finally {
         setDocumentsLoading(false);
       }
     };
@@ -207,7 +207,7 @@ export const PublicProfilePage: React.FC = () => {
       setPageLoading(false);
     }
 
-  }, [cleanUserId]); // Only depend on cleanUserId
+  }, [cleanUserId, profile?.id, authUserLoading]); // Listen for profile ID changes (vital for /profile/me)
 
   const handleContactCandidate = () => {
     // Since messaging is coming soon, show an alert or redirect
@@ -263,14 +263,19 @@ export const PublicProfilePage: React.FC = () => {
             <main className="relative">
               {/* Floating Side Nav for Desktop */}
               <nav className="fixed left-8 top-1/2 -translate-y-1/2 hidden xl:flex flex-col gap-6 z-40">
-                {['About', 'Experience', 'Expertise', 'Certifications', 'Docs'].map((item) => (
+                {[
+                  ...(profileToDisplay.bio ? ['About'] : []),
+                  'Experience',
+                  'Expertise',
+                  'Documents'
+                ].map((item) => (
                   <a
                     key={item}
                     href={`#${item.toLowerCase()}`}
                     className="group flex items-center gap-4 transition-all"
                   >
-                    <span className="w-2 h-2 rounded-full bg-white/10 group-hover:bg-cyan-400 group-hover:scale-150 transition-all duration-300"></span>
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-gray-600 group-hover:text-cyan-400 opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300">
+                    <span className="w-2 h-2 rounded-full bg-zinc-200 group-hover:bg-emerald-500 group-hover:scale-150 transition-all duration-300"></span>
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-400 group-hover:text-emerald-500 opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300">
                       {item}
                     </span>
                   </a>
@@ -280,40 +285,34 @@ export const PublicProfilePage: React.FC = () => {
               {/* Hero Section */}
               <section className="relative mb-24 pt-8 animate-fade-in-up">
                 {/* Glass Background Highlight */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-96 bg-cyan-500/10 blur-[150px] -z-10 rounded-full opacity-60"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-96 bg-emerald-500/10 blur-[150px] -z-10 rounded-full opacity-60"></div>
 
                 <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-12">
                   <div className="flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
-                    <div className="relative group p-1 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 shadow-2xl">
+                    <div className="relative group p-1 rounded-full bg-gradient-to-tr from-emerald-400 to-emerald-600 shadow-xl">
                       {profileToDisplay.photo_url ? (
-                        <img src={profileToDisplay.photo_url} alt={profileToDisplay.name} className="relative w-40 h-40 md:w-52 md:h-52 rounded-full object-cover border-8 border-brand-dark" />
+                        <img src={profileToDisplay.photo_url} alt={profileToDisplay.name} className="relative w-40 h-40 md:w-52 md:h-52 rounded-full object-cover border-8 border-white shadow-2xl" />
                       ) : (
-                        <div className="relative w-40 h-40 md:w-52 md:h-52 bg-gray-900 rounded-full flex items-center justify-center text-7xl font-bold text-cyan-400 border-8 border-brand-dark">
+                        <div className="relative w-40 h-40 md:w-52 md:h-52 bg-zinc-100 rounded-full flex items-center justify-center text-7xl font-bold text-emerald-500 border-8 border-white shadow-2xl">
                           {profileToDisplay.name?.charAt(0)}
                         </div>
                       )}
-                      <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 rounded-full border-4 border-brand-dark shadow-xl ring-4 ring-green-500/20"></div>
+                      <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-emerald-500 rounded-full border-4 border-white shadow-xl ring-4 ring-emerald-500/10"></div>
                     </div>
 
                     <div className="space-y-4">
-                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400">
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600">
                         Available for opportunities
                       </div>
-                      <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tighter">
+                      <h1 className="text-5xl md:text-7xl font-extrabold text-zinc-900 tracking-tighter">
                         {profileToDisplay.name}
                       </h1>
-                      <p className="text-2xl md:text-3xl font-light text-gray-400 tracking-tight">
+                      <p className="text-2xl md:text-3xl font-light text-zinc-600 tracking-tight">
                         {profileToDisplay.title}
                       </p>
                       <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-6">
-                        {profileToDisplay.portfolio_url && (
-                          <a href={profileToDisplay.portfolio_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-5 py-2 rounded-2xl bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 transition-all font-medium">
-                            <LinkIcon className="w-5 h-5 mr-3 text-cyan-400" />
-                            <span>Live Portfolio</span>
-                          </a>
-                        )}
-                        <div className="inline-flex items-center px-5 py-2 rounded-2xl bg-white/5 border border-white/10 text-gray-300 font-medium">
-                          <MapPinIcon className="w-5 h-5 mr-3 text-cyan-400" />
+                        <div className="inline-flex items-center px-5 py-2 rounded-2xl bg-white border border-zinc-200 text-zinc-700 font-medium shadow-sm">
+                          <MapPinIcon className="w-5 h-5 mr-3 text-emerald-500" />
                           <span>{profileToDisplay.location}</span>
                         </div>
                       </div>
@@ -327,19 +326,19 @@ export const PublicProfilePage: React.FC = () => {
                           {copied ? <CheckCircleIcon className="w-5 h-5 mr-3 text-green-400" /> : <ShareIcon className="w-5 h-5 mr-3" />}
                           {copied ? 'Link Copied' : 'Share Profile'}
                         </Button>
-                        <Button to="/onboarding" variant="primary" className="px-8 py-3.5 rounded-2xl shadow-lg shadow-cyan-500/20">
+                        <Button to="/onboarding" variant="primary" className="px-8 py-3.5 rounded-2xl shadow-lg shadow-emerald-500/20">
                           <PencilIcon className="w-5 h-5 mr-3" />
                           Edit Profile
                         </Button>
                       </>
                     ) : (
                       <div className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-[2rem] blur opacity-40 group-hover:opacity-75 transition duration-500"></div>
+                        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-[2rem] blur opacity-40 group-hover:opacity-75 transition duration-500"></div>
                         <Button onClick={handleContactCandidate} variant="primary" className="relative w-full px-10 py-4 rounded-[1.8rem]">
                           <EnvelopeIcon className="w-5 h-5 mr-3" />
                           Connect Now
                         </Button>
-                        <span className="absolute -top-4 -right-2 bg-gradient-to-tr from-cyan-500 to-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full border-2 border-brand-dark shadow-2xl animate-bounce">
+                        <span className="absolute -top-4 -right-2 bg-gradient-to-tr from-emerald-500 to-emerald-700 text-white text-[10px] font-bold px-3 py-1 rounded-full border-2 border-white shadow-xl animate-bounce">
                           BETA
                         </span>
                       </div>
@@ -351,49 +350,51 @@ export const PublicProfilePage: React.FC = () => {
               {/* Main Content Grid */}
               <div className="flex flex-col gap-12">
                 {/* About Section */}
-                <RevealSection id="about" animation="fade">
-                  <Card className="p-10 border-white/10 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                      <UserIcon className="w-32 h-32 text-white" />
-                    </div>
-                    <h2 className="text-3xl font-bold text-white mb-6 flex items-center">
-                      <span className="w-1.5 h-8 bg-cyan-400 mr-4 rounded-full"></span>
-                      Professional Bio
-                    </h2>
-                    <p className="text-xl text-gray-400 leading-relaxed font-light whitespace-pre-wrap max-w-3xl">
-                      {profileToDisplay.bio}
-                    </p>
-                  </Card>
-                </RevealSection>
+                {profileToDisplay.bio && (
+                  <RevealSection id="about" animation="fade">
+                    <Card className="p-10 border-zinc-200 relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <UserIcon className="w-32 h-32 text-zinc-900" />
+                      </div>
+                      <h2 className="text-3xl font-bold text-zinc-900 mb-6 flex items-center">
+                        <span className="w-1.5 h-8 bg-emerald-500 mr-4 rounded-full"></span>
+                        Professional Bio
+                      </h2>
+                      <p className="text-xl text-zinc-600 leading-relaxed font-light whitespace-pre-wrap max-w-3xl">
+                        {profileToDisplay.bio}
+                      </p>
+                    </Card>
+                  </RevealSection>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
                   {/* LEFT COLUMN: Experience & Preferences */}
                   <div className="md:col-span-5 space-y-12">
                     <RevealSection id="experience" animation="left">
-                      <Card className="p-8">
-                        <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
-                          <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 flex items-center justify-center mr-4 border border-cyan-500/20">
-                            <BriefcaseIcon className="w-5 h-5 text-cyan-400" />
+                      <Card className="p-8 border-zinc-200">
+                        <h2 className="text-2xl font-bold text-zinc-900 mb-8 flex items-center">
+                          <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center mr-4 border border-emerald-100">
+                            <BriefcaseIcon className="w-5 h-5 text-emerald-600" />
                           </div>
                           Career Overview
                         </h2>
                         <div className="space-y-8">
                           <div>
-                            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Focus Areas</h3>
+                            <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-4">Focus Areas</h3>
                             <div className="flex flex-wrap gap-2">
                               {(profileToDisplay.roles || []).map(role => (
-                                <span key={role} className="text-xs font-bold text-cyan-300 py-1.5 px-4 rounded-full bg-cyan-500/5 border border-cyan-500/20">{role}</span>
+                                <span key={role} className="text-xs font-bold text-emerald-600 py-1.5 px-4 rounded-full bg-emerald-50 border border-emerald-100">{role}</span>
                               ))}
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-8 pt-6 border-t border-white/5">
+                          <div className="grid grid-cols-2 gap-8 pt-6 border-t border-zinc-100">
                             <div>
-                              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Industry</h3>
-                              <p className="text-lg text-white font-semibold">{profileToDisplay.industry}</p>
+                              <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Industry</h3>
+                              <p className="text-lg text-zinc-900 font-semibold">{profileToDisplay.industry}</p>
                             </div>
                             <div>
-                              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Professionalism</h3>
-                              <p className="text-lg text-white font-semibold">{profileToDisplay.experience} Years</p>
+                              <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Professionalism</h3>
+                              <p className="text-lg text-zinc-900 font-semibold">{profileToDisplay.experience} Years</p>
                             </div>
                           </div>
                         </div>
@@ -401,38 +402,40 @@ export const PublicProfilePage: React.FC = () => {
                     </RevealSection>
 
                     <RevealSection animation="left">
-                      <Card className="p-8 bg-gradient-to-br from-blue-600/5 to-transparent">
-                        <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
-                          <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center mr-4 border border-blue-500/20">
-                            <AcademicCapIcon className="w-5 h-5 text-blue-400" />
+                      <div className="bg-white rounded-[2/5rem] p-8 border border-zinc-200 shadow-sm relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-emerald-700 opacity-50"></div>
+                        <h2 className="text-xl font-bold text-zinc-900 mb-6">Quick Overview</h2>
+                        <div className="space-y-6">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-zinc-500">Current Industry</span>
+                            <span className="text-sm font-bold text-zinc-900">{profileToDisplay.industry}</span>
                           </div>
-                          Certifications
-                        </h2>
-                        <div className="space-y-4">
-                          {(profileToDisplay.certifications || []).length > 0 ? (profileToDisplay.certifications || []).map(cert => (
-                            <div key={cert} className="flex items-center p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-blue-500/30 transition-all group">
-                              <CheckCircleIcon className="w-5 h-5 mr-4 text-blue-400 opacity-50 group-hover:opacity-100 transition-opacity" />
-                              <span className="text-gray-300 font-medium">{cert}</span>
-                            </div>
-                          )) : <p className="text-gray-500 italic text-sm text-center py-4">No verified credentials yet.</p>}
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-zinc-500">Experience</span>
+                            <span className="text-sm font-bold text-zinc-900">{profileToDisplay.experience} Years</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-zinc-500">Current Location</span>
+                            <span className="text-sm font-bold text-zinc-900">{profileToDisplay.location}</span>
+                          </div>
                         </div>
-                      </Card>
+                      </div>
                     </RevealSection>
                   </div>
 
                   {/* RIGHT COLUMN: Skills & Documents */}
                   <div className="md:col-span-7 space-y-12">
                     <RevealSection id="expertise" animation="right">
-                      <Card className="p-8">
-                        <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
-                          <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 flex items-center justify-center mr-4 border border-cyan-500/20">
-                            <TagIcon className="w-5 h-5 text-cyan-400" />
+                      <Card className="p-8 border-zinc-200">
+                        <h2 className="text-2xl font-bold text-zinc-900 mb-8 flex items-center">
+                          <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center mr-4 border border-emerald-100">
+                            <TagIcon className="w-5 h-5 text-emerald-600" />
                           </div>
-                          Technical Arsenal
+                          Skills
                         </h2>
                         <div className="flex flex-wrap gap-3">
                           {(profileToDisplay.skills || []).map(skill => (
-                            <span key={skill} className="px-5 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-gray-300 font-semibold hover:border-cyan-500/50 hover:bg-cyan-500/5 hover:text-white hover:-translate-y-1 transition-all cursor-default shadow-sm text-sm">
+                            <span key={skill} className="px-5 py-3 rounded-2xl bg-zinc-50 border border-zinc-100 text-zinc-700 font-semibold hover:border-emerald-500/50 hover:bg-emerald-50 hover:text-emerald-600 hover:-translate-y-1 transition-all cursor-default shadow-sm text-sm">
                               {skill}
                             </span>
                           ))}
@@ -441,32 +444,32 @@ export const PublicProfilePage: React.FC = () => {
                     </RevealSection>
 
                     <RevealSection id="docs" animation="right">
-                      <Card className="p-8 relative overflow-hidden">
-                        <div className="absolute -top-12 -right-12 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full"></div>
-                        <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
-                          <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 flex items-center justify-center mr-4 border border-cyan-500/20">
-                            <DocumentIcon className="w-5 h-5 text-cyan-400" />
+                      <Card className="p-8 relative overflow-hidden border-zinc-200">
+                        <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full"></div>
+                        <h2 className="text-2xl font-bold text-zinc-900 mb-8 flex items-center">
+                          <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center mr-4 border border-emerald-100">
+                            <DocumentIcon className="w-5 h-5 text-emerald-600" />
                           </div>
-                          Digital Portfolio
+                          Documents
                         </h2>
                         {documentsLoading ? (
                           <div className="flex justify-center py-12">
-                            <div className="h-10 w-10 rounded-full border-t-2 border-cyan-400 animate-spin"></div>
+                            <div className="h-10 w-10 rounded-full border-t-2 border-emerald-400 animate-spin"></div>
                           </div>
                         ) : publicDocuments.length > 0 ? (
                           <div className="grid grid-cols-1 gap-4">
                             {publicDocuments.map(doc => (
-                              <div key={doc.id} className="group flex items-center justify-between p-5 rounded-3xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] hover:border-cyan-500/30 transition-all duration-500">
+                              <div className="flex items-center justify-between p-5 rounded-3xl bg-zinc-50 border border-zinc-100 hover:bg-white hover:border-emerald-500/30 hover:shadow-lg transition-all duration-500 group">
                                 <div className="flex items-center min-w-0">
-                                  <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center mr-5 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                                    <DocumentIcon className="w-7 h-7 text-cyan-400" />
+                                  <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mr-5 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-sm">
+                                    <DocumentIcon className="w-7 h-7 text-emerald-600" />
                                   </div>
                                   <div className="min-w-0">
-                                    <p className="font-bold text-white truncate text-lg">{doc.name}</p>
+                                    <p className="font-bold text-zinc-900 truncate text-lg">{doc.name}</p>
                                     <div className="flex items-center gap-4 mt-1">
-                                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{doc.size}</span>
-                                      <span className="w-1 h-1 bg-gray-700 rounded-full"></span>
-                                      <span className="text-[10px] text-cyan-500/60 font-bold uppercase tracking-widest">Verified Digital Copy</span>
+                                      <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{doc.size}</span>
+                                      <span className="w-1 h-1 bg-zinc-200 rounded-full"></span>
+                                      <span className="text-[10px] text-emerald-600/70 font-bold uppercase tracking-widest">Verified Digital Copy</span>
                                     </div>
                                   </div>
                                 </div>
@@ -475,7 +478,7 @@ export const PublicProfilePage: React.FC = () => {
                                     href={doc.public_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-cyan-400 bg-white/5 hover:bg-cyan-500/10 rounded-2xl transition-all active:scale-90"
+                                    className="w-12 h-12 flex items-center justify-center text-zinc-400 hover:text-emerald-600 bg-white hover:bg-emerald-50 rounded-2xl shadow-sm transition-all active:scale-90 border border-zinc-100"
                                     title="View"
                                   >
                                     <EyeIcon className="w-6 h-6" />
@@ -483,7 +486,7 @@ export const PublicProfilePage: React.FC = () => {
                                   <a
                                     href={doc.public_url}
                                     download
-                                    className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-blue-400 bg-white/5 hover:bg-blue-500/10 rounded-2xl transition-all active:scale-90"
+                                    className="w-12 h-12 flex items-center justify-center text-zinc-400 hover:text-emerald-500 bg-white hover:bg-emerald-50 rounded-2xl shadow-sm transition-all active:scale-90 border border-zinc-100"
                                     title="Download"
                                   >
                                     <DownloadIcon className="w-6 h-6" />
@@ -493,9 +496,9 @@ export const PublicProfilePage: React.FC = () => {
                             ))}
                           </div>
                         ) : (
-                          <div className="text-center py-12 bg-white/[0.01] rounded-[2.5rem] border-2 border-dashed border-white/5">
-                            <DocumentIcon className="w-16 h-16 text-white/5 mx-auto mb-4" />
-                            <p className="text-gray-500 text-lg font-light italic">No public documents shared.</p>
+                          <div className="text-center py-12 bg-zinc-50 rounded-[2.5rem] border-2 border-dashed border-zinc-200">
+                            <DocumentIcon className="w-16 h-16 text-zinc-200 mx-auto mb-4" />
+                            <p className="text-zinc-400 text-lg font-light italic">No public documents shared.</p>
                           </div>
                         )}
                       </Card>

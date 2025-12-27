@@ -8,7 +8,7 @@ const Avatar: React.FC<{ photo_url: string; name: string; size?: string }> = ({ 
     return photo_url ? (
         <img src={photo_url} alt={name} className={`${size} rounded-full object-cover`} />
     ) : (
-        <div className={`${size} bg-gray-700 rounded-full flex items-center justify-center text-sm font-bold text-cyan-400`}>
+        <div className={`${size} bg-zinc-100 rounded-full flex items-center justify-center text-sm font-bold text-emerald-600 border border-zinc-200`}>
             {name ? name.charAt(0) : '?'}
         </div>
     );
@@ -20,7 +20,7 @@ const NavItem: React.FC<{ to: string, children: React.ReactNode, isComingSoon?: 
             <span className="relative">
                 {children}
                 {isComingSoon && (
-                    <span className="absolute -top-1.5 -right-6 bg-cyan-900/80 text-cyan-300 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border border-cyan-700">
+                    <span className="absolute -top-1.5 -right-6 bg-emerald-900/80 text-emerald-300 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border border-emerald-700">
                         SOON
                     </span>
                 )}
@@ -59,8 +59,8 @@ const Header: React.FC = () => {
         }
     };
 
-    const baseLinkStyle = "relative text-gray-400 hover:text-white transition-all duration-300 py-1.5 px-3 rounded-xl hover:bg-white/5 font-medium text-sm tracking-wide";
-    const activeLinkStyle = "text-white bg-white/10 ring-1 ring-white/10 shadow-lg";
+    const baseLinkStyle = "relative text-zinc-600 hover:text-zinc-900 transition-all duration-300 py-1.5 px-3 rounded-xl hover:bg-zinc-100 font-medium text-sm tracking-wide";
+    const activeLinkStyle = "text-zinc-900 bg-zinc-100 ring-1 ring-zinc-200/50 shadow-sm";
     const mobileLinkStyle = "block py-3 px-4 text-base rounded-2xl";
 
     const candidateNav = (
@@ -96,10 +96,10 @@ const Header: React.FC = () => {
     );
 
     return (
-        <header className="bg-brand-dark/40 backdrop-blur-xl sticky top-0 z-50 border-b border-white/[0.05]">
+        <header className="bg-white/70 backdrop-blur-xl sticky top-0 z-50 border-b border-zinc-200/50">
             <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-                <NavLink to={isRecruiter ? "/candidates" : (profile ? "/profile/me" : "/")} className="text-2xl font-bold text-white tracking-tighter">
-                    TMR<span className="text-cyan-400">.</span>
+                <NavLink to={isRecruiter ? "/candidates" : (profile ? "/profile/me" : "/")} className="text-2xl font-bold text-zinc-900 tracking-tighter">
+                    TMR<span className="text-emerald-500">.</span>
                 </NavLink>
 
                 <nav className="hidden md:flex items-center space-x-8">
@@ -112,14 +112,14 @@ const Header: React.FC = () => {
                             {isRecruiter ? (
                                 <>
                                     {isRecruiterViewingProfile && (
-                                        <NavLink to="/candidates" className="text-sm font-medium text-cyan-400 hover:text-white transition-colors">
+                                        <NavLink to="/candidates" className="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors">
                                             &larr; Back to Candidates
                                         </NavLink>
                                     )}
                                     <button
                                         onClick={handleLogout}
                                         disabled={isLoggingOut}
-                                        className="text-sm font-medium text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="text-sm font-medium text-zinc-400 hover:text-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isLoggingOut ? 'Logging out...' : 'Log Out'}
                                     </button>
@@ -127,12 +127,12 @@ const Header: React.FC = () => {
                             ) : (
                                 <>
                                     <Avatar photo_url={profile.photo_url} name={profile.name} />
-                                    <span className="font-medium text-gray-200">{profile.name}</span>
-                                    <span className="text-gray-600">|</span>
+                                    <span className="font-medium text-zinc-900">{profile.name}</span>
+                                    <span className="text-zinc-200">|</span>
                                     <button
                                         onClick={handleLogout}
                                         disabled={isLoggingOut}
-                                        className="text-sm font-medium text-gray-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="text-sm font-medium text-zinc-400 hover:text-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isLoggingOut ? 'Logging out...' : 'Log Out'}
                                     </button>
@@ -145,7 +145,7 @@ const Header: React.FC = () => {
                             <button
                                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                                 aria-label="Toggle menu"
-                                className="text-gray-300 hover:text-white focus:outline-none"
+                                className="text-zinc-400 hover:text-zinc-900 focus:outline-none"
                                 aria-expanded={isMenuOpen}
                             >
                                 {isMenuOpen ? <CloseIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
@@ -156,19 +156,19 @@ const Header: React.FC = () => {
             </div>
 
             {/* Mobile Menu */}
-            <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-96 border-t border-gray-800' : 'max-h-0'}`}>
+            <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-96 border-t border-zinc-100 bg-white/95' : 'max-h-0'}`}>
                 <nav className="px-6 pb-4 pt-2 flex flex-col space-y-1">
                     {isViewingPublicProfile ? null : (isRecruiter ? mobileRecruiterNav : mobileCandidateNav)}
 
                     {profile && !isViewingPublicProfile && (
-                        <div className="pt-4 mt-2 border-t border-gray-700">
+                        <div className="pt-4 mt-2 border-t border-zinc-100">
                             {isRecruiter ? (
                                 <>
                                     {isRecruiterViewingProfile && (
                                         <NavLink
                                             to="/candidates"
                                             onClick={() => setIsMenuOpen(false)}
-                                            className="block py-2 px-3 text-base text-cyan-400 rounded-md bg-gray-800/50 hover:bg-gray-700/80 hover:text-white transition-colors mb-2"
+                                            className="block py-2 px-3 text-base text-emerald-600 rounded-md bg-emerald-50 hover:bg-emerald-100 transition-colors mb-2"
                                         >
                                             &larr; Back to Candidates
                                         </NavLink>
@@ -179,7 +179,7 @@ const Header: React.FC = () => {
                                             handleLogout(e);
                                         }}
                                         disabled={isLoggingOut}
-                                        className="w-full text-left block py-2 px-3 text-base text-gray-300 rounded-md bg-gray-800/50 hover:bg-gray-700/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full text-left block py-2 px-3 text-base text-zinc-600 rounded-md bg-zinc-50 hover:bg-zinc-100 hover:text-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isLoggingOut ? 'Logging out...' : 'Log Out'}
                                     </button>
@@ -189,8 +189,8 @@ const Header: React.FC = () => {
                                     <div className="flex items-center space-x-3 mb-4 px-1">
                                         <Avatar photo_url={profile.photo_url} name={profile.name} size="h-10 w-10" />
                                         <div>
-                                            <p className="font-medium text-white">{profile.name}</p>
-                                            <p className="text-sm text-gray-400">{profile.title}</p>
+                                            <p className="font-medium text-zinc-900">{profile.name}</p>
+                                            <p className="text-sm text-zinc-500">{profile.title}</p>
                                         </div>
                                     </div>
                                     <button
@@ -199,7 +199,7 @@ const Header: React.FC = () => {
                                             handleLogout(e);
                                         }}
                                         disabled={isLoggingOut}
-                                        className="w-full text-left block py-2 px-3 text-base text-gray-300 rounded-md bg-gray-800/50 hover:bg-gray-700/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full text-left block py-2 px-3 text-base text-zinc-600 rounded-md bg-zinc-50 hover:bg-zinc-100 hover:text-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isLoggingOut ? 'Logging out...' : 'Log Out'}
                                     </button>

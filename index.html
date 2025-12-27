@@ -19,9 +19,9 @@
           },
           colors: {
             brand: {
-              dark: '#0a0f18',
-              surface: '#161b22',
-              accent: '#22d3ee',
+              dark: '#09090b',
+              surface: '#18181b',
+              accent: '#10b981',
             }
           }
         }
@@ -41,15 +41,15 @@
 </script>
   <style>
     :root {
-      --bg-dark: #0a0f18;
-      --bg-accent: #111827;
+      --bg-dark: #fafafa;
+      --bg-accent: #f4f4f5;
     }
 
     body {
       background-color: var(--bg-dark);
       background-image:
-        radial-gradient(at 0% 0%, rgba(34, 211, 238, 0.05) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(37, 99, 235, 0.05) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(39, 39, 42, 0.03) 0px, transparent 50%);
       background-attachment: fixed;
       font-family: 'Outfit', sans-serif;
     }
@@ -102,6 +102,38 @@
       animation: slide-in-right 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
+    @keyframes slideUpFade {
+      from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes slideDownFade {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-step-in {
+      animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .animate-prompt-in {
+      animation: slideDownFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
     .reveal-hidden {
       opacity: 0;
       transition: none;
@@ -113,21 +145,21 @@
     }
 
     ::-webkit-scrollbar-track {
-      background: #0a0f18;
+      background: #fafafa;
     }
 
     ::-webkit-scrollbar-thumb {
-      background: #1f2937;
+      background: #e4e4e7;
       border-radius: 10px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-      background: #374151;
+      background: #d4d4d8;
     }
   </style>
 </head>
 
-<body class="text-gray-200">
+<body class="text-zinc-900">
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

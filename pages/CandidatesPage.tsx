@@ -104,7 +104,7 @@ const CandidatesPage: React.FC = () => {
         if (searchLocation && !c.location?.toLowerCase().includes(searchLocation)) {
             return false;
         }
-        
+
         if (searchExperience && /^\d+$/.test(searchExperience)) {
             const minExp = parseInt(searchExperience, 10);
             const candidateExp = c.experience ? parseInt(c.experience, 10) : -1;
@@ -121,7 +121,7 @@ const CandidatesPage: React.FC = () => {
         }
         return true;
     });
-    
+
     // Show a global loader while verifying the user's role
     if (profileLoading) {
         return (
@@ -130,12 +130,12 @@ const CandidatesPage: React.FC = () => {
             </div>
         );
     }
-    
+
     return (
         <div className="container mx-auto px-6 py-12 max-w-7xl animate-fade-in-up">
             <header className="mb-8">
-                <h1 className="text-4xl font-bold text-white">Find Candidates</h1>
-                <p className="text-xl text-gray-300 mt-2">Use the filters below to find talent matching your criteria.</p>
+                <h1 className="text-4xl font-bold text-zinc-900">Find Candidates</h1>
+                <p className="text-xl text-zinc-600 mt-2">Use the filters below to find talent matching your criteria.</p>
             </header>
 
             <Card className="p-6 mb-10">
@@ -146,7 +146,7 @@ const CandidatesPage: React.FC = () => {
                         <Input label="Minimum Experience (years)" name="experience" type="number" value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="e.g. 5" min="0" icon={<CalendarDaysIcon />} />
                         <Input label="Skills" name="skills" value={skills} onChange={(e) => setSkills(e.target.value)} placeholder="e.g. React, TypeScript, Node.js" helperText="Enter skills separated by commas." icon={<TagIcon />} />
                     </div>
-                    <div className="flex flex-col sm:flex-row justify-end items-center gap-4 mt-6 pt-6 border-t border-gray-700">
+                    <div className="flex flex-col sm:flex-row justify-end items-center gap-4 mt-6 pt-6 border-t border-zinc-100">
                         <Button type="button" variant="secondary" onClick={handleClear} className="w-full sm:w-auto">
                             Clear Filters
                         </Button>
@@ -163,7 +163,7 @@ const CandidatesPage: React.FC = () => {
                     <LoaderIcon className="w-10 h-10" />
                 </div>
             ) : isSearching ? (
-                 <MagicLoader text="Finding the best candidates..." />
+                <MagicLoader text="Finding the best candidates..." />
             ) : error ? (
                 <div className="text-center p-10 text-red-400">{error}</div>
             ) : (
@@ -175,9 +175,9 @@ const CandidatesPage: React.FC = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-20 bg-gray-800/50 rounded-lg">
-                            <h3 className="text-xl font-semibold text-white">No Candidates Found</h3>
-                            <p className="text-gray-400 mt-2">
+                        <div className="text-center py-20 bg-zinc-50 border border-zinc-200 rounded-[2rem] shadow-sm">
+                            <h3 className="text-xl font-semibold text-zinc-900">No Candidates Found</h3>
+                            <p className="text-zinc-600 mt-2">
                                 Try adjusting your search filters to find more results.
                             </p>
                         </div>

@@ -9,9 +9,11 @@ interface LocationAutocompleteInputProps {
   required?: boolean;
   icon?: React.ReactNode;
   placeholder?: string;
+  className?: string;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
-const LocationAutocompleteInput: React.FC<LocationAutocompleteInputProps> = ({ label, name, value, onChange, required, icon, placeholder }) => {
+const LocationAutocompleteInput: React.FC<LocationAutocompleteInputProps> = ({ label, name, value, onChange, required, icon, placeholder, className, onKeyDown }) => {
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -64,10 +66,12 @@ const LocationAutocompleteInput: React.FC<LocationAutocompleteInputProps> = ({ l
   };
 
   return (
-    <div ref={wrapperRef}>
-      <label htmlFor={name} className="block text-sm font-medium text-gray-300 mb-2">
-        {label}
-      </label>
+    <div ref={wrapperRef} className="w-full">
+      {label && (
+        <label htmlFor={name} className="block text-sm font-medium text-zinc-700 mb-2">
+          {label}
+        </label>
+      )}
       <div className="relative">
         {icon && (
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -81,19 +85,20 @@ const LocationAutocompleteInput: React.FC<LocationAutocompleteInputProps> = ({ l
           value={query}
           onChange={handleInputChange}
           onFocus={() => query.length > 1 && suggestions.length > 0 && setIsDropdownOpen(true)}
-          className={`w-full py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transform transition-all duration-300 focus:scale-[1.02] ${icon ? 'pl-11' : 'px-4'}`}
+          onKeyDown={onKeyDown}
+          className={className || `w-full py-2.5 bg-white border border-zinc-200 rounded-2xl text-zinc-900 placeholder-zinc-400 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all duration-300 ${icon ? 'pl-11' : 'px-4'}`}
           placeholder={placeholder}
           required={required}
           autoComplete="off"
         />
         {isDropdownOpen && suggestions.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto animate-fade-in-up" style={{ animationDuration: '200ms' }}>
-            <ul>
+          <div className="absolute z-50 w-full mt-4 bg-white border border-zinc-100 rounded-3xl shadow-2xl overflow-hidden animate-prompt-in">
+            <ul className="divide-y divide-zinc-50">
               {suggestions.map((suggestion, index) => (
                 <li
                   key={index}
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="px-4 py-3 text-gray-300 hover:bg-gray-700/80 cursor-pointer transition-colors duration-150"
+                  className="px-6 py-4 text-zinc-700 hover:bg-emerald-50 hover:text-emerald-600 cursor-pointer transition-colors duration-150 font-medium"
                 >
                   {suggestion}
                 </li>

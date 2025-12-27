@@ -159,8 +159,8 @@ const AuthPage: React.FC = () => {
     const tabButtonClasses = (tabName: 'signin' | 'signup') => {
         const isActive = view === tabName;
         return `w-1/2 py-4 text-center font-bold transition-all duration-500 cursor-pointer text-sm uppercase tracking-widest ${isActive
-            ? 'text-white border-b-2 border-cyan-500 bg-white/5'
-            : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.02]'
+            ? 'text-zinc-900 border-b-2 border-emerald-500 bg-zinc-50'
+            : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50/50'
             }`;
     };
 
@@ -168,43 +168,43 @@ const AuthPage: React.FC = () => {
         <div className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden">
             <header className="absolute top-0 left-0 w-full p-6 sm:p-8 z-20">
                 <div className="container mx-auto flex items-center">
-                    <Link to="/" className="text-3xl font-bold tracking-tighter text-white">
-                        TMR<span className="text-cyan-400">.</span>
+                    <Link to="/" className="text-3xl font-bold tracking-tighter text-zinc-900">
+                        TMR<span className="text-emerald-500">.</span>
                     </Link>
                 </div>
             </header>
             <main className="w-full max-w-md mx-auto z-10 animate-fade-in-up">
                 {!role ? (
                     <Card className="p-10 text-center relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
-                        <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">Join the Elite</h2>
-                        <p className="text-gray-400 mb-10 font-light">Select your path to continue</p>
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-emerald-700"></div>
+                        <h2 className="text-3xl font-bold text-zinc-900 mb-3 tracking-tight">Join the Elite</h2>
+                        <p className="text-zinc-600 mb-10 font-light">Select your path to continue</p>
                         <div className="grid grid-cols-1 gap-4">
                             <button
                                 onClick={() => setRole('candidate')}
-                                className="relative text-left p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-3xl transition-all duration-500 hover:border-cyan-500/50 hover:shadow-[0_0_20px_-10px_rgba(34,211,238,0.5)] active:scale-95 group/btn"
+                                className="relative text-left p-6 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-3xl transition-all duration-500 hover:border-emerald-500/50 hover:shadow-sm active:scale-95 group/btn"
                             >
                                 <div className="flex items-center">
-                                    <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center mr-5 group-hover/btn:bg-cyan-500/20 transition-colors">
-                                        <UserIcon className="w-8 h-8 text-cyan-400" />
+                                    <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mr-5 group-hover/btn:bg-emerald-500/20 transition-colors">
+                                        <UserIcon className="w-8 h-8 text-emerald-600" />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-white mb-1">Candidate</h3>
-                                        <p className="text-sm text-gray-400 leading-tight">Build your profile & get hired.</p>
+                                        <h3 className="text-xl font-bold text-zinc-900 mb-1">Candidate</h3>
+                                        <p className="text-sm text-zinc-600 leading-tight">Build your profile & get hired.</p>
                                     </div>
                                 </div>
                             </button>
                             <button
                                 onClick={() => { setRole('recruiter'); setView('signin'); }}
-                                className="relative text-left p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-3xl transition-all duration-500 hover:border-blue-500/50 hover:shadow-[0_0_20px_-10px_rgba(37,99,235,0.5)] active:scale-95 group/btn"
+                                className="relative text-left p-6 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-3xl transition-all duration-500 hover:border-emerald-500/50 hover:shadow-sm active:scale-95 group/btn"
                             >
                                 <div className="flex items-center">
-                                    <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mr-5 group-hover/btn:bg-blue-500/20 transition-colors">
-                                        <BriefcaseIcon className="w-8 h-8 text-blue-400" />
+                                    <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mr-5 group-hover/btn:bg-emerald-500/20 transition-colors">
+                                        <BriefcaseIcon className="w-8 h-8 text-emerald-600" />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-white mb-1">Recruiter</h3>
-                                        <p className="text-sm text-gray-400 leading-tight">Find & connect with top talent.</p>
+                                        <h3 className="text-xl font-bold text-zinc-900 mb-1">Recruiter</h3>
+                                        <p className="text-sm text-zinc-600 leading-tight">Find & connect with top talent.</p>
                                     </div>
                                 </div>
                             </button>
@@ -249,7 +249,7 @@ const AuthPage: React.FC = () => {
 
                         <div className="p-8">
                             <div className="text-left mb-4">
-                                <button type="button" onClick={() => setRole(null)} className="text-sm text-cyan-400 hover:underline">&larr; Change role</button>
+                                <button type="button" onClick={() => setRole(null)} className="text-sm text-emerald-400 hover:underline">&larr; Change role</button>
                             </div>
 
                             {error && <p className="mb-4 text-center text-red-400">{error}</p>}
@@ -257,7 +257,7 @@ const AuthPage: React.FC = () => {
 
                             {view === 'signup' && role !== 'recruiter' && (
                                 <form onSubmit={handleSubmit} className="space-y-6">
-                                    <h2 className="text-2xl font-bold text-center text-white">
+                                    <h2 className="text-2xl font-bold text-center text-zinc-900">
                                         Create Your Account
                                     </h2>
                                     <Input label="Full Name" name="name" type="text" placeholder="Alex Doe" required icon={<UserIcon />} disabled={isLoading} />
@@ -271,14 +271,14 @@ const AuthPage: React.FC = () => {
 
                             {view === 'signin' && (
                                 <form onSubmit={handleSubmit} className="space-y-6">
-                                    <h2 className="text-2xl font-bold text-center text-white">Welcome Back</h2>
+                                    <h2 className="text-2xl font-bold text-center text-zinc-900">Welcome Back</h2>
                                     {role === 'recruiter' && (
-                                        <p className="text-center text-sm text-gray-400 mb-2">Recruiter accounts are invitation-only. Please sign in with your existing credentials.</p>
+                                        <p className="text-center text-sm text-zinc-500 mb-2">Recruiter accounts are invitation-only. Please sign in with your existing credentials.</p>
                                     )}
                                     <Input label="Email Address" name="email" type="email" placeholder="you@example.com" required icon={<EnvelopeIcon />} disabled={isLoading} />
                                     <Input label="Password" name="password" type="password" placeholder="••••••••" required icon={<LockClosedIcon />} disabled={isLoading} />
                                     <div className="text-right">
-                                        <button type="button" onClick={() => setView('forgot_password')} className="text-sm text-cyan-400 hover:underline">Forgot password?</button>
+                                        <button type="button" onClick={() => setView('forgot_password')} className="text-sm text-emerald-400 hover:underline">Forgot password?</button>
                                     </div>
                                     <Button type="submit" variant="primary" className="w-full" loading={isLoading}>
                                         {isLoading ? 'Signing In...' : 'Sign In'}
@@ -288,14 +288,14 @@ const AuthPage: React.FC = () => {
 
                             {view === 'forgot_password' && (
                                 <form onSubmit={handleSubmit} className="space-y-6">
-                                    <h2 className="text-2xl font-bold text-center text-white">Reset Password</h2>
-                                    <p className="text-center text-sm text-gray-400">Enter your email and we'll send you a link to reset your password.</p>
+                                    <h2 className="text-2xl font-bold text-center text-zinc-900">Reset Password</h2>
+                                    <p className="text-center text-sm text-zinc-500">Enter your email and we'll send you a link to reset your password.</p>
                                     <Input label="Email Address" name="email" type="email" placeholder="you@example.com" required icon={<EnvelopeIcon />} disabled={isLoading} />
                                     <Button type="submit" variant="primary" className="w-full" loading={isLoading}>
                                         {isLoading ? 'Sending...' : 'Send Reset Link'}
                                     </Button>
                                     <div className="text-center">
-                                        <button type="button" onClick={() => setView('signin')} className="text-sm text-cyan-400 hover:underline">Back to Sign In</button>
+                                        <button type="button" onClick={() => setView('signin')} className="text-sm text-emerald-400 hover:underline">Back to Sign In</button>
                                     </div>
                                 </form>
                             )}
