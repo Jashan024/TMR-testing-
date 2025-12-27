@@ -257,30 +257,43 @@ export const PublicProfilePage: React.FC = () => {
 
   return (
     <>
-      <div className="py-12 sm:py-20 transition-all duration-300">
+      {/* Minimal Header for External Profile Views */}
+      {!isMyProfile && (
+        <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-zinc-100">
+          <div className="container mx-auto px-6 py-4">
+            <div className="text-2xl font-bold text-zinc-900 tracking-tighter">
+              TMR<span className="text-emerald-500">.</span>
+            </div>
+          </div>
+        </header>
+      )}
+
+      <div className={`py-12 sm:py-20 transition-all duration-300 ${!isMyProfile ? 'pt-24' : ''}`}>
         <div className="container mx-auto px-6 max-w-5xl">
           {profileToDisplay && (
             <main className="relative">
-              {/* Floating Side Nav for Desktop */}
-              <nav className="fixed left-8 top-1/2 -translate-y-1/2 hidden xl:flex flex-col gap-6 z-40">
-                {[
-                  ...(profileToDisplay.bio ? ['About'] : []),
-                  'Experience',
-                  'Expertise',
-                  'Documents'
-                ].map((item) => (
-                  <a
-                    key={item}
-                    href={`#${item.toLowerCase()}`}
-                    className="group flex items-center gap-4 transition-all"
-                  >
-                    <span className="w-2 h-2 rounded-full bg-zinc-200 group-hover:bg-emerald-500 group-hover:scale-150 transition-all duration-300"></span>
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-400 group-hover:text-emerald-500 opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300">
-                      {item}
-                    </span>
-                  </a>
-                ))}
-              </nav>
+              {/* Floating Side Nav for Desktop - Only for own profile */}
+              {isMyProfile && (
+                <nav className="fixed left-8 top-1/2 -translate-y-1/2 hidden xl:flex flex-col gap-6 z-40">
+                  {[
+                    ...(profileToDisplay.bio ? ['About'] : []),
+                    'Experience',
+                    'Expertise',
+                    'Documents'
+                  ].map((item) => (
+                    <a
+                      key={item}
+                      href={`#${item.toLowerCase()}`}
+                      className="group flex items-center gap-4 transition-all"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-zinc-200 group-hover:bg-emerald-500 group-hover:scale-150 transition-all duration-300"></span>
+                      <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-400 group-hover:text-emerald-500 opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300">
+                        {item}
+                      </span>
+                    </a>
+                  ))}
+                </nav>
+              )}
 
               {/* Hero Section */}
               <section className="relative mb-24 pt-8 animate-fade-in-up">

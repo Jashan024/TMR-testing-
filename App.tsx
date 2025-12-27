@@ -16,7 +16,11 @@ import MessagesPage from './pages/MessagesPage';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
-  const showHeader = !['/', '/auth', '/onboarding'].includes(location.pathname);
+
+  // Hide header for landing, auth, onboarding, and external profile views
+  // Keep header for /profile/me and all other routes
+  const isExternalProfile = location.pathname.startsWith('/profile/') && location.pathname !== '/profile/me';
+  const showHeader = !['/', '/auth', '/onboarding'].includes(location.pathname) && !isExternalProfile;
 
   return (
     <>
