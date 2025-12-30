@@ -310,37 +310,42 @@ const OnboardingPage: React.FC = () => {
             id: 'title',
             prompt: `Nice to meet you, ${formData.name?.split(' ')[0]}. What's your current job title?`,
             content: (
-                <div className="relative group">
-                    <input
-                        type="text"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                        placeholder="e.g. Senior Frontend Engineer"
-                        className="w-full text-4xl font-bold bg-transparent border-b-4 border-zinc-100 focus:border-emerald-500 focus:outline-none py-4 transition-all"
-                        autoFocus
-                        onKeyDown={(e) => e.key === 'Enter' && formData.title && setCurrentStep(s => s + 1)}
-                    />
-                    {formData.title && (
-                        <div className="absolute top-full left-0 mt-4 text-zinc-400 font-medium group-focus-within:opacity-0 transition-opacity">Press Enter to continue</div>
-                    )}
-                    {(!formData.title || formData.title.length > 0) && (
-                        <div className="flex flex-wrap gap-2 mt-6">
-                            {(INDUSTRY_TITLES[formData.industry || 'IT'] || []).filter(t => t.toLowerCase().includes(formData.title?.toLowerCase() || '')).slice(0, 5).map(suggestedTitle => (
+                <div className="space-y-8">
+                    {/* Popular Job Titles as Pills */}
+                    <div className="space-y-4">
+                        <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Popular titles in {formData.industry}</p>
+                        <div className="flex flex-wrap gap-3">
+                            {(INDUSTRY_TITLES[formData.industry || 'IT'] || []).slice(0, 8).map(suggestedTitle => (
                                 <button
                                     key={suggestedTitle}
                                     onClick={() => {
                                         setFormData(prev => ({ ...prev, title: suggestedTitle }));
-                                        // Slight delay for visual feedback before advancing
                                         setTimeout(() => setCurrentStep(s => s + 1), 200);
                                     }}
-                                    className="px-4 py-2 rounded-2xl border border-zinc-100 bg-zinc-50/50 text-zinc-600 text-sm font-medium hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 transition-all"
+                                    className={`px-6 py-3 rounded-full border-2 text-base font-semibold transition-all active:scale-95 ${formData.title === suggestedTitle
+                                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-lg'
+                                        : 'border-zinc-200 bg-white text-zinc-700 hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-600'
+                                        }`}
                                 >
-                                    + {suggestedTitle}
+                                    {suggestedTitle}
                                 </button>
                             ))}
                         </div>
-                    )}
+                    </div>
+
+                    {/* Or type your own */}
+                    <div className="relative pt-4 border-t border-zinc-100">
+                        <p className="text-sm font-medium text-zinc-500 mb-4">Or type your own title</p>
+                        <input
+                            type="text"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            placeholder="e.g. Senior Frontend Engineer"
+                            className="w-full text-2xl font-bold bg-transparent border-b-2 border-zinc-200 focus:border-emerald-500 focus:outline-none py-3 transition-all"
+                            onKeyDown={(e) => e.key === 'Enter' && formData.title && setCurrentStep(s => s + 1)}
+                        />
+                    </div>
                 </div>
             ),
             isValid: !!formData.title
@@ -349,15 +354,43 @@ const OnboardingPage: React.FC = () => {
             id: 'location',
             prompt: "Where are you based? Recruiters love to know your local market.",
             content: (
-                <LocationAutocompleteInput
-                    label=""
-                    name="location"
-                    value={formData.location || ''}
-                    onChange={handleChange}
-                    placeholder="City, State..."
-                    className="w-full text-4xl font-extrabold bg-transparent border-b-4 border-zinc-100 focus:border-emerald-500 focus:outline-none py-4 transition-all"
-                    onKeyDown={(e) => e.key === 'Enter' && formData.location && setCurrentStep(s => s + 1)}
-                />
+                <div className="space-y-8">
+                    {/* Popular Cities as Pills */}
+                    <div className="space-y-4">
+                        <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Popular locations</p>
+                        <div className="flex flex-wrap gap-3">
+                            {['New York, NY', 'San Francisco, CA', 'Los Angeles, CA', 'Chicago, IL', 'Austin, TX', 'Seattle, WA', 'Boston, MA', 'Denver, CO', 'Miami, FL', 'Atlanta, GA', 'Remote'].map(city => (
+                                <button
+                                    key={city}
+                                    onClick={() => {
+                                        setFormData(prev => ({ ...prev, location: city }));
+                                        setTimeout(() => setCurrentStep(s => s + 1), 200);
+                                    }}
+                                    className={`px-6 py-3 rounded-full border-2 text-base font-semibold transition-all active:scale-95 ${formData.location === city
+                                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-lg'
+                                            : 'border-zinc-200 bg-white text-zinc-700 hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-600'
+                                        }`}
+                                >
+                                    {city}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Or search for your city */}
+                    <div className="relative pt-4 border-t border-zinc-100">
+                        <p className="text-sm font-medium text-zinc-500 mb-4">Or search for your city</p>
+                        <LocationAutocompleteInput
+                            label=""
+                            name="location"
+                            value={formData.location || ''}
+                            onChange={handleChange}
+                            placeholder="City, State..."
+                            className="w-full text-2xl font-bold bg-transparent border-b-2 border-zinc-200 focus:border-emerald-500 focus:outline-none py-3 transition-all"
+                            onKeyDown={(e) => e.key === 'Enter' && formData.location && setCurrentStep(s => s + 1)}
+                        />
+                    </div>
+                </div>
             ),
             isValid: !!formData.location
         },
